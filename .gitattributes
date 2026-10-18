@@ -1,0 +1,23 @@
+* text=auto
+
+# Shell hooks must use LF for Git for Windows and Unix.
+.githooks/* text eol=lf
+/.gitattributes text eol=lf
+gradlew text eol=lf
+*.sh text eol=lf
+
+# The Windows Gradle wrapper uses native Windows line endings.
+*.bat text eol=crlf
+
+*.kt text eol=lf
+*.kts text eol=lf
+*.md text eol=lf
+*.properties text eol=lf
+*.toml text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.jar binary
+*.png binary
+*.webp binary
