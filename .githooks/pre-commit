@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo 'Checking staged whitespace...'
+git diff --cached --check
+
+echo 'Running unit tests...'
+case "${OS:-}" in
+    Windows_NT) ./gradlew.bat :app:testDebugUnitTest ;;
+    *) ./gradlew :app:testDebugUnitTest ;;
+esac
