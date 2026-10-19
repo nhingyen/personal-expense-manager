@@ -19,4 +19,4 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
-The repository contains the Android Studio starter screen and tests. Compose and Material 3 are already configured. Room, Hilt, and application features are planned, not yet installed or implemented. The [roadmap](../tasks/ROADMAP.md) defines the order of work.
+The repository has a localized starter screen in Vietnamese (default) and English. Compose and Material 3 remain configured. Room, Hilt, KSP, and coroutines/Flow dependencies are configured in the single app module; the Hilt application and activity entry points compile and launch on API 35. Minimum-SDK startup verification on API 26 remains open. Transaction storage, feature screens, and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.

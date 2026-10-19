@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Personal Expense Manager</string>
+    <string name="greeting">Hello %1$s!</string>
+    <string name="greeting_name">Android</string>
+</resources>
