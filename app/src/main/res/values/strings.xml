@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">PersonalExpenseManager</string>
+    <string name="app_name">Quản lý chi tiêu</string>
+    <string name="greeting">Xin chào %1$s!</string>
+    <string name="greeting_name">Android</string>
 </resources>
