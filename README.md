@@ -1,6 +1,6 @@
 # Personal Expense Manager
 
-An Android Kotlin portfolio project for tracking income and expenses offline. The repository currently contains the Android Studio starter app; the product features are planned in the [roadmap](tasks/ROADMAP.md).
+An Android Kotlin portfolio project for tracking income and expenses offline. The repository has the transaction domain and Room storage foundation; the visible app is still the localized starter screen. Product screens are planned in the [roadmap](tasks/ROADMAP.md).
 
 ## Planned app
 
@@ -15,6 +15,12 @@ Open the project in Android Studio with an Android SDK compatible with `compileS
 ```
 
 On macOS/Linux, use `./gradlew` instead.
+
+With an Android device or emulator connected, run the Room and Hilt tests:
+
+```powershell
+.\gradlew.bat :app:connectedDebugAndroidTest
+```
 
 ## Development process
 

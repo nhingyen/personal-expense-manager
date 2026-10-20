@@ -11,7 +11,7 @@ Build an offline personal expense tracker that demonstrates clear Android fundam
 - Persist records locally with Room so core flows work without an account or network.
 - Handle empty, loading, and error states in a usable Material 3 Compose UI.
 
-Money will be stored as integer minor units; display formatting belongs to presentation. The initial release has no sync, authentication, budget alerts, or currency conversion.
+Money will be stored as a positive `Long` count of whole VND; display formatting belongs to presentation. The initial release has no sync, authentication, budget alerts, or currency conversion.
 
 ## Technical direction
 
@@ -19,4 +19,4 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
-The repository has a localized starter screen in Vietnamese (default) and English. Compose and Material 3 remain configured. Room, Hilt, KSP, and coroutines/Flow dependencies are configured in the single app module; the Hilt application and activity entry points compile and launch on API 35. Minimum-SDK startup verification on API 26 remains open. Transaction storage, feature screens, and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.
+The repository has a localized starter screen in Vietnamese (default) and English. Compose and Material 3 remain configured. The single app module now has a pure domain transaction contract and use cases, Room persistence, a repository, and Hilt wiring; local and emulator tests pass on API 35. Minimum-SDK startup verification on API 26 remains open. Transaction screens and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.

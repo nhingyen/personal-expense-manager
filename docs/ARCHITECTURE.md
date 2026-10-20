@@ -11,17 +11,17 @@ Keep one Gradle module, `:app`, with packages under `com.ngyennhi.expensemanager
 | `presentation` | Compose screens, ViewModels, UI state, and event handling. |
 | `di` | Hilt bindings and application wiring. |
 
-`di.ExpenseManagerApplication` is the Hilt application entry point. The starter `MainActivity` remains at the app root as the Android entry point and renders the `presentation.Greeting` composable. The existing `ui.theme` package can move under `presentation` when the first feature is built. `domain` and `data` gain source files when TASK-002 introduces their first responsibilities; empty placeholder classes are unnecessary.
+`di.ExpenseManagerApplication` is the Hilt application entry point. The starter `MainActivity` remains at the app root as the Android entry point and renders the `presentation.Greeting` composable. The existing `ui.theme` package can move under `presentation` when the first feature is built. TASK-002 adds `domain` models, repository contract, and use cases, plus `data` Room storage, mappers, and repository implementation.
 
 ## Dependency rules
 
 `presentation -> domain <- data`; `di` connects implementations to domain interfaces at the app boundary. Domain must not import Android, Compose, Room, Hilt, or presentation/data classes. Data must not depend on presentation. Compose screens must not call DAOs or know Room entities. These package rules are enforced by review while the code remains in one module.
 
-AGP 9 supplies Kotlin compilation for the Android module; only the Compose compiler, KSP, and Hilt plugins are applied separately. Their versions and all new library versions live in the Gradle version catalog. Room's runtime, KTX, and KSP compiler are configured for TASK-002; there is no database or DAO in TASK-001.
+AGP 9 supplies Kotlin compilation for the Android module; only the Compose compiler, KSP, and Hilt plugins are applied separately. Their versions and all new library versions live in the Gradle version catalog. Room's runtime, KTX, and KSP compiler generate the TASK-002 database and DAO; the version 1 schema is exported under `app/schemas`.
 
 ## Data and state flow
 
-Room is the future local source of truth. A repository exposes domain models and `Flow` streams; use cases express business rules. ViewModels collect flows with lifecycle-aware coroutines, expose immutable `StateFlow<UiState>`, and handle user actions. Compose renders state and sends events to ViewModels. Use suspend functions for writes and explicit error handling for failures. Keep currency values as integer minor units and dates as a stable domain representation; mapping to storage and display formats stays at the boundaries.
+Room is the local source of truth. `TransactionDao` exposes a Room `Flow`; `RoomTransactionRepository` maps entities to domain records and implements the domain repository contract. Pure domain use cases validate writes and expose the observation stream. Future ViewModels will collect flows with lifecycle-aware coroutines, expose immutable `StateFlow<UiState>`, and handle user actions; Compose will render state and send events. Use suspend functions for writes and explicit error handling for failures. Keep amounts as positive `Long` values in whole VND and dates as `LocalDate` in domain; the mapper stores dates as epoch-day integers and presentation will format values for display.
 
 ## Localization
 
