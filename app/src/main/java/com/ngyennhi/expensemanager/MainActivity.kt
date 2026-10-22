@@ -4,26 +4,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import com.ngyennhi.expensemanager.presentation.Greeting
+import androidx.activity.viewModels
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionApp
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val transactionViewModel: TransactionViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PersonalExpenseManagerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                TransactionApp(transactionViewModel)
             }
         }
     }

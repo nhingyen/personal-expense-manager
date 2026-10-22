@@ -19,4 +19,4 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
-The repository has a localized starter screen in Vietnamese (default) and English. Compose and Material 3 remain configured. The single app module now has a pure domain transaction contract and use cases, Room persistence, a repository, and Hilt wiring; local and emulator tests pass on API 35. Minimum-SDK startup verification on API 26 remains open. Transaction screens and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.
+The single app module has a pure domain transaction contract and use cases, Room persistence, Hilt wiring, and a Compose transaction list/add/edit/detail flow with ViewModel state and Navigation. Vietnamese is the default locale and English resources are provided. TASK-003 build, unit, lint, and emulator tests have run on API 35; minimum-SDK startup verification on API 26 from TASK-001 remains open. Monthly summary and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.

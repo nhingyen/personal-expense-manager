@@ -11,7 +11,9 @@ Keep one Gradle module, `:app`, with packages under `com.ngyennhi.expensemanager
 | `presentation` | Compose screens, ViewModels, UI state, and event handling. |
 | `di` | Hilt bindings and application wiring. |
 
-`di.ExpenseManagerApplication` is the Hilt application entry point. The starter `MainActivity` remains at the app root as the Android entry point and renders the `presentation.Greeting` composable. The existing `ui.theme` package can move under `presentation` when the first feature is built. TASK-002 adds `domain` models, repository contract, and use cases, plus `data` Room storage, mappers, and repository implementation.
+`di.ExpenseManagerApplication` is the Hilt application entry point. `MainActivity` remains at the app root and renders `presentation.transaction.TransactionApp`. TASK-002 provides the `domain` contract/use cases and `data` Room implementation; TASK-003 adds a transaction ViewModel, UI state, Navigation Compose routes, and list/form/detail composables under `presentation.transaction`. The existing `ui.theme` package remains the shared Design System.
+
+Transaction UI is organized by screen: `TransactionListScreen.kt` owns the list and its row/empty helpers, `TransactionFormScreen.kt` owns the shared add/edit form and its field-error text/currency suffix helpers, and `TransactionDetailScreen.kt` owns detail and its field helper. `TransactionComponents.kt` contains UI shared across screens, including the top bar, type chip, category icon, error banner, and unavailable-record state. `TransactionApp.kt` owns navigation; screen extraction does not change ViewModel or domain responsibilities.
 
 ## Dependency rules
 
@@ -21,7 +23,7 @@ AGP 9 supplies Kotlin compilation for the Android module; only the Compose compi
 
 ## Data and state flow
 
-Room is the local source of truth. `TransactionDao` exposes a Room `Flow`; `RoomTransactionRepository` maps entities to domain records and implements the domain repository contract. Pure domain use cases validate writes and expose the observation stream. Future ViewModels will collect flows with lifecycle-aware coroutines, expose immutable `StateFlow<UiState>`, and handle user actions; Compose will render state and send events. Use suspend functions for writes and explicit error handling for failures. Keep amounts as positive `Long` values in whole VND and dates as `LocalDate` in domain; the mapper stores dates as epoch-day integers and presentation will format values for display.
+Room is the local source of truth. `TransactionDao` exposes a Room `Flow`; `RoomTransactionRepository` maps entities to domain records and implements the domain repository contract. Pure domain use cases validate writes and expose the observation stream. `TransactionViewModel` collects that stream in `viewModelScope`, exposes immutable `StateFlow<TransactionUiState>`, and handles user actions; Compose collects state with lifecycle awareness, renders it, and sends events. Navigation Compose owns list, add, detail, and edit routes. Use suspend functions for writes and explicit error handling for failures. Keep amounts as positive `Long` values in whole VND and dates as `LocalDate` in domain; the mapper stores dates as epoch-day integers and presentation formats values for display.
 
 ## Localization
 
