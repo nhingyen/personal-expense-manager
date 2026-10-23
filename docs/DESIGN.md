@@ -83,7 +83,39 @@ Treat loading and an observed empty result as separate UI states. Announce error
 
 ## TBD and scope
 
-**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; follow-up screens for categories, budgets, wallets, transfer, backup, export, and delete-all. Resolve each when its roadmap task is implemented. Wallets, budgets, charts, and data-management actions shown in Figma do not expand the current MVP.
+**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; full management screens for categories/budgets, wallets, transfer, backup, export, and delete-all. Resolve each when its roadmap task is implemented. The latest TASK-004 request explicitly includes Home budget configuration/progress, category selection, and in-app budget notices; the remaining Figma features do not expand the current MVP.
+
+## DashboardScreen UI slice (2026-10-23)
+
+Home `3:9610` was consulted again through Figma MCP design context, metadata, and screenshot. DashboardScreen renders the existing DashboardUiState and sends month, Add, View all, record ID, and Retry callbacks. It reuses the theme, AppTopBar, transaction row/category icons, error banner, and locale formatting. MonthSelector is shared with Transactions. The monthly card labels the primary value as net income; income/expense use Figma's two columns when their measured localized text fits, and stack only when needed for long values or larger fonts. Loading, observed-empty, error, stale data, retry, and overflow have distinct rendering; no initial financial values are fabricated.
+
+TASK-004 integration connects the screen through `ExpenseManagerApp` with lifecycle-aware StateFlow collection and Home as root. Home and Transactions share bottom navigation: Home, a prominent central Add action, and Transactions. Secondary form/detail/edit screens keep back controls. Standalone screens retain their optional floating Add action; integrated screens use the navigation Add action and empty-state button. Home has a localized title. Row amount width is bounded so very long values wrap while leaving transaction text readable. The later Home completion below adds greeting/avatar, bell, shortcuts, and a real monthly budget. Wallets, statistics, settings, full budget/category management, and OS notifications remain deferred. VI/EN resource keys match; device verification is recorded in TASK-004.
+
+## TASK-004 visual fidelity correction (2026-10-23)
+
+Home `3:9610`, Transactions `3:9699`, and Add `3:9803` were re-read through Figma MCP design context and screenshots after review identified avoidable differences from the reference. This correction changes presentation only:
+
+- Shared top bars use a 64 dp content area and 20 dp primary-title margin, with system status-bar insets handled separately. Secondary titles and back controls follow the Add reference. Shared typography explicitly retains the full 1.35× line-height frame (`LineHeightStyle.Trim.None`); Compose's default trimming had made single-line text frames and the summary card shorter than Figma. The existing solid pastel palette remains shared.
+- The monthly card uses 20 dp padding/radius, 12 dp section spacing, a 36 sp net value, two equal income/expense columns separated by 12 dp, 16 dp directional icons, 12 sp month labels, and 14 sp semibold totals. Actual text measurement selects a full-width fallback; values are never rounded, shortened, or clipped to force a layout.
+- The calendar and selected month form one centered group. Chevron controls retain 48 dp touch bounds. The Home completion moves this selector into a dialog opened by the greeting's date/month line; Home content starts 8 dp below the top bar with 16 dp between the greeting and card.
+- Bottom navigation uses a white surface and top border, an 80 dp minimum content row, 58 × 32 dp selected indicators, a 48 × 32 dp Add indicator, 22 dp icons, a 4 dp icon/label gap, and 11 sp labels (semibold when selected). Home/Transactions have selected tab semantics; Add is a button action. System navigation-bar insets are separate.
+- Thirteen original Figma SVGs were converted to local Android vector drawables for Home, Transactions, Add, income/expense directions, month calendar/chevrons, and five category icons. They preserve the exported paths and 1.8-unit strokes, without runtime asset URLs. The replaced low-resolution category/chevron PNGs were removed; existing category drawable names remain reusable across screens.
+- Recent transactions use 6 dp row gaps, 64 dp minimum rows, 44 dp category icons, and 4 dp between row text lines. A saved note is the main row title, as in Figma's lunch/coffee examples; category and stored date are supporting text, and the localized transaction type remains available to accessibility services. Records without notes retain category titles. No time/account values are invented. View all uses 12 sp medium text and a 48 dp touch height. Transactions content uses the reference 8 dp top inset and 10 dp section gaps.
+
+The three supported destinations, selected-month control, net-income label, localized Home title, and up-to-five real recent rows remain intentional scope adaptations. A full nine-screen replica requires the future features listed above.
+
+Verification on Pixel_5/API 35 uses the device's actual status/cutout inset (136 px at 440 dpi, approximately 49.5 dp), rather than Figma's 28 px status placeholder. This shifts the content vertically on that emulator while preserving the measured component geometry. Screenshot fixtures use the same edge-to-edge setup as MainActivity; device insets must remain respected.
+
+## TASK-004 Home completion (2026-10-23)
+
+The user explicitly requested the Home blocks that the earlier implementation omitted. Home `3:9610` was consulted again through Figma MCP design context and screenshot. The order is now top bar with bell, date/greeting/avatar, summary, Budget/Categories shortcuts, monthly budget, and recent transactions.
+
+- The bell uses the exported 22 dp outline in a 48 dp control. The greeting uses localized device date/time, 13 sp supporting text and 20 sp medium greeting, beside a neutral 42 dp circular avatar. No name/initials are invented. The date/month line opens the shared month selector in a dialog, retaining selected-month functionality without another permanent header row.
+- Shortcuts have equal widths, a 12 dp gap, 48 dp minimum height, 14 dp radius, 20 dp original Figma icons, and the existing green/yellow surfaces. Budget opens a working limit editor; Categories opens localized form suggestions and saved categories, and selection prefills Add with the category/type.
+- The budget card uses a white surface, 20 dp radius, 16 dp padding, 14 sp title, 12 sp supporting text, 9 dp local gaps, and a 7 dp purple progress bar. The populated reference fixture measures approximately 92 dp high. It grows when text needs space. Percentage and remaining/exceeded amounts derive from the selected month's real expenses and saved limit. Unset budgets show a setup state; loading/errors do not show invented amounts or progress. Exceeded values remain exact even when the bar visually reaches 100%.
+- The bell opens actual current-month budget notices or an explicit empty state. Editor, category chooser, and notices use small working Material 3 sheets; full management screens and OS notification delivery remain deferred. All added labels/errors use VI/EN resources. Three exported Figma shortcut/bell vectors and a neutral local avatar vector reuse the shared palette and require no runtime network access.
+
+Reference fixture values, including 12,000,000 VND and 68%, exist only in tests. Runtime Home starts with no configured limit and uses persisted user data. Verification, local screenshots, and remaining platform/accessibility limitations are recorded in TASK-004.
 
 ## TASK-003 implementation decisions
 

@@ -60,6 +60,7 @@ class TransactionFlowTest {
     @Test
     fun createEditCancelDeleteAndConfirmDeleteUseRoom() {
         val activity = composeRule.activity
+        composeRule.onNodeWithTag("nav_transactions").performClick()
         composeRule.onNodeWithText(activity.getString(R.string.empty_transactions_title)).assertExists()
 
         composeRule.onNodeWithTag("add_transaction_button").performClick()
@@ -111,6 +112,7 @@ class TransactionFlowTest {
     @Test
     fun createIncomeUsingSuggestedCategory() {
         val activity = composeRule.activity
+        composeRule.onNodeWithTag("nav_transactions").performClick()
         composeRule.onNodeWithTag("add_transaction_button").performClick()
         composeRule.onNodeWithText(activity.getString(R.string.type_income)).performClick()
         composeRule.onNodeWithTag("amount_input").performTextInput("125000")

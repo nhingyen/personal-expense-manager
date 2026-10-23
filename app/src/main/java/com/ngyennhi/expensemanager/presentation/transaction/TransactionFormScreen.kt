@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.time.Instant
@@ -87,8 +88,8 @@ internal fun TransactionFormScreen(
     val vndSuffix = stringResource(R.string.vnd_suffix)
     Scaffold(
         containerColor = ExpenseManagerColors.background,
-        topBar = { TransactionTopBar(stringResource(if (form.editingId == null) R.string.add_transaction_title
-            else R.string.edit_transaction_title), onBack) },
+        topBar = { AppTopBar(stringResource(if (form.editingId == null) R.string.add_transaction_title
+            else R.string.edit_transaction_title), onBack = onBack) },
     ) { padding ->
         when {
             form.editingId != null && state.loadStatus == LoadStatus.LOADING && !form.initialized ->
@@ -165,10 +166,7 @@ internal fun TransactionFormScreen(
                             isError = form.categoryError != null,
                             shape = RoundedCornerShape(14.dp),
                         )
-                        val categoryOptions = if (form.type == TransactionType.EXPENSE) {
-                            listOf(R.string.category_food, R.string.category_coffee,
-                                R.string.category_shopping, R.string.category_transport)
-                        } else listOf(R.string.category_salary)
+                        val categoryOptions = suggestedCategories(form.type)
                         DropdownMenu(expanded = showCategories, onDismissRequest = { showCategories = false }) {
                             categoryOptions.forEach { label ->
                                 val categoryName = stringResource(label)

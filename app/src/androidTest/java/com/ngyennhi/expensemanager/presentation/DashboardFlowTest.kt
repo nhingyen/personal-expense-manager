@@ -1,0 +1,300 @@
+package com.ngyennhi.expensemanager.presentation
+
+import android.content.Context
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextClearance
+import androidx.lifecycle.ViewModelProvider
+import androidx.room.Room
+import androidx.test.espresso.Espresso
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ngyennhi.expensemanager.MainActivity
+import com.ngyennhi.expensemanager.R
+import com.ngyennhi.expensemanager.data.local.ExpenseManagerDatabase
+import com.ngyennhi.expensemanager.data.local.TransactionDao
+import com.ngyennhi.expensemanager.di.TransactionDatabaseModule
+import com.ngyennhi.expensemanager.di.MonthlyBudgetStorageModule
+import com.ngyennhi.expensemanager.domain.repository.MonthlyBudgetRepository
+import com.ngyennhi.expensemanager.domain.model.TransactionDraft
+import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
+import com.ngyennhi.expensemanager.presentation.dashboard.DashboardLoadStatus
+import com.ngyennhi.expensemanager.presentation.dashboard.DashboardViewModel
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionFilter
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
+import dagger.hilt.components.SingletonComponent
+import java.time.LocalDate
+import java.time.YearMonth
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@HiltAndroidTest
+@UninstallModules(TransactionDatabaseModule::class, MonthlyBudgetStorageModule::class)
+@RunWith(AndroidJUnit4::class)
+class DashboardFlowTest {
+    @get:Rule(order = 0) val hiltRule = HiltAndroidRule(this)
+    @get:Rule(order = 1) val composeRule = createAndroidComposeRule<MainActivity>()
+    @Inject lateinit var database: ExpenseManagerDatabase
+    @Inject lateinit var repository: TransactionRepository
+    private val dashboard get() = ViewModelProvider(composeRule.activity)[DashboardViewModel::class.java]
+    private val transactions get() = ViewModelProvider(composeRule.activity)[TransactionViewModel::class.java]
+
+    @Before fun setUp() { hiltRule.inject(); awaitReady() }
+    @After fun tearDown() { database.close() }
+
+    @Test
+    fun budgetSetupValidationRoomUpdatesNotificationsAndClearingWork() {
+        composeRule.onNodeWithTag("home_greeting").assertExists()
+        composeRule.onNodeWithTag("home_notifications_button").performClick()
+        composeRule.onNodeWithTag("home_no_notifications").assertExists()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("home_budget_shortcut").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("0")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.amount_invalid)).assertExists()
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("12000000")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.budgetLimitVnd == 12_000_000L && !dashboard.uiState.value.isSavingBudget }
+        assertEquals(0L, dashboard.uiState.value.budget?.spentVnd)
+        val id = seed()
+        assertEquals(100L, dashboard.uiState.value.budget?.spentVnd)
+        runBlocking {
+            val record = repository.observeTransactions().first().single()
+            repository.update(record.copy(amountVnd = 15_000_000))
+        }
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.budget?.remainingVnd == -3_000_000L }
+        composeRule.onNodeWithTag("home_notifications_button").performClick()
+        composeRule.onNodeWithTag("home_budget_notice").assertExists()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_clear").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.budgetLimitVnd == null && !dashboard.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_progress").assertDoesNotExist()
+        assertNull(dashboard.uiState.value.budget)
+        assertEquals(id, runBlocking { repository.observeTransactions().first().single().id })
+    }
+
+    @Test
+    fun categoryShortcutReusesSuggestionsAndOpensPrefilledAddWithoutWritingOnCancel() {
+        composeRule.onNodeWithTag("home_categories_shortcut").performScrollTo().performClick()
+        val category = composeRule.activity.getString(R.string.category_coffee)
+        composeRule.onNodeWithText(category).performScrollTo().performClick()
+        composeRule.onNodeWithTag("category_input").assertExists()
+        assertEquals(category, transactions.uiState.value.form.category)
+        assertEquals(TransactionType.EXPENSE, transactions.uiState.value.form.type)
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
+    }
+
+    @Test
+    fun launchesHomeAndDirectAddSaveCreatesListAndUpdatesDashboard() {
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        assertTrue(dashboard.uiState.value.isEmpty)
+        composeRule.onNodeWithTag("nav_add").performClick()
+        composeRule.onNodeWithTag("amount_input").performTextInput("85000")
+        composeRule.onNodeWithTag("category_input").performTextInput("Food")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        awaitRows(1)
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        composeRule.onNodeWithTag("nav_home").performClick()
+        awaitNet(-85_000)
+        val id = dashboard.uiState.value.recentTransactions.single().id
+        composeRule.onNodeWithTag("transaction_row_$id").performScrollTo().performClick()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        assertEquals(-85_000L, dashboard.uiState.value.summary?.netVnd)
+    }
+
+    @Test
+    fun directHomeEditUpdatesAmountTypeDateAndSelectsSavedMonthInTransactions() {
+        val month = dashboard.uiState.value.selectedMonth
+        val id = seed(month.atDay(15))
+        openRecent(id)
+        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        // Use the existing event handlers for type/date; TASK-003 covers form widgets.
+        composeRule.runOnIdle {
+            transactions.setAmount("250000")
+            transactions.setType(TransactionType.INCOME)
+            transactions.setDate(month.plusMonths(1).atDay(1))
+        }
+        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.isEmpty }
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        assertEquals(month.plusMonths(1), transactions.uiState.value.selectedMonth)
+        assertEquals(id, runBlocking { repository.observeTransactions().first().single().id })
+        composeRule.onNodeWithTag("nav_home").performClick()
+        composeRule.onNodeWithTag("dashboard_empty").performScrollTo().assertExists()
+        composeRule.onNodeWithTag("home_month_picker").performClick()
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.next_month)).performClick()
+        composeRule.onNodeWithTag("home_month_done").performClick()
+        awaitNet(250_000)
+        assertEquals(listOf(id), dashboard.uiState.value.recentTransactions.map { it.id })
+    }
+
+    @Test
+    fun directHomeDeleteAndCancelWorkWithoutPreviousListEntry() {
+        val id = seed()
+        openRecent(id)
+        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.cancel)).performClick()
+        assertEquals(1, runBlocking { repository.observeTransactions().first().size })
+        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("confirm_delete_button").performClick()
+        awaitRows(0)
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        composeRule.onNodeWithTag("nav_home").performClick()
+        composeRule.onNodeWithTag("dashboard_empty").performScrollTo().assertExists()
+        awaitNet(0)
+    }
+
+    @Test
+    fun missingRecordOpenedFromHomeCanReturnToTransactionsWithoutPreviousList() {
+        val id = seed()
+        openRecent(id)
+        runBlocking { repository.delete(id) }
+        val returnLabel = composeRule.activity.getString(R.string.back_to_transactions)
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText(returnLabel).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText(returnLabel).performClick()
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        assertTrue(dashboard.uiState.value.isEmpty)
+    }
+
+    @Test
+    fun cancelAddAndEditDoNotWriteAndBackReturnsToInvoker() {
+        composeRule.onNodeWithTag("nav_add").performClick()
+        composeRule.onNodeWithTag("amount_input").performTextInput("123")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
+        val id = seed()
+        openRecent(id)
+        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.runOnIdle { transactions.setAmount("999") }
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").assertExists()
+        assertEquals(100L, runBlocking { repository.observeTransactions().first().single().amountVnd })
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
+
+    @Test
+    fun tabSwitchesPreserveSelectionsAndViewAllResetsOnlyTransactionFilters() {
+        seed()
+        val month = dashboard.uiState.value.selectedMonth
+        composeRule.onNodeWithTag("nav_transactions").performClick()
+        composeRule.runOnIdle {
+            transactions.setQuery("no match")
+            transactions.setFilter(TransactionFilter.INCOME)
+            transactions.selectMonth(month.minusMonths(2))
+        }
+        repeat(5) {
+            composeRule.onNodeWithTag("nav_home").performClick()
+            composeRule.onNodeWithTag("nav_transactions").performClick()
+        }
+        assertEquals("no match", transactions.uiState.value.query)
+        assertEquals(TransactionFilter.INCOME, transactions.uiState.value.filter)
+        assertEquals(month.minusMonths(2), transactions.uiState.value.selectedMonth)
+        composeRule.onNodeWithTag("nav_home").performClick()
+        assertEquals(100L, dashboard.uiState.value.summary?.expenseVnd)
+        composeRule.onNodeWithTag("dashboard_view_all").performScrollTo().performClick()
+        assertEquals(month, transactions.uiState.value.selectedMonth)
+        assertEquals("", transactions.uiState.value.query)
+        assertEquals(TransactionFilter.ALL, transactions.uiState.value.filter)
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        // No duplicate Transactions entry remains behind Home.
+        composeRule.onNodeWithTag("nav_transactions").assertExists()
+    }
+
+    @Test
+    fun selectedMonthSurvivesActivityRecreationAndRepeatedNavigation() {
+        composeRule.runOnIdle { dashboard.changeMonth(-3) }
+        val selected = dashboard.uiState.value.selectedMonth
+        composeRule.activityRule.scenario.recreate()
+        awaitReady()
+        assertEquals(selected, dashboard.uiState.value.selectedMonth)
+        repeat(3) {
+            composeRule.onNodeWithTag("nav_transactions").performClick()
+            Espresso.pressBack()
+            composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        }
+        composeRule.onNodeWithTag("nav_add").performClick()
+        composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
+        assertEquals(selected, dashboard.uiState.value.selectedMonth)
+    }
+
+    private fun seed(date: LocalDate = dashboard.uiState.value.selectedMonth.atDay(15)): Long {
+        val id = runBlocking { repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Food", date, "Lunch")) }
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.recentTransactions.any { it.id == id } }
+        return id
+    }
+
+    private fun openRecent(id: Long) {
+        composeRule.onNodeWithTag("transaction_row_$id").performScrollTo().performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").assertExists()
+    }
+
+    private fun awaitRows(count: Int) {
+        composeRule.waitUntil(5_000) { transactions.uiState.value.transactions.size == count && !transactions.uiState.value.form.isSaving }
+        composeRule.waitUntil(5_000) { composeRule.onAllNodesWithTag("nav_transactions").fetchSemanticsNodes().isNotEmpty() }
+    }
+    private fun awaitReady() { composeRule.waitUntil(5_000) {
+        dashboard.uiState.value.loadStatus == DashboardLoadStatus.READY &&
+            dashboard.uiState.value.budgetLoadStatus == DashboardLoadStatus.READY
+    } }
+    private fun awaitNet(amount: Long) {
+        composeRule.waitUntil(5_000) { dashboard.uiState.value.summary?.netVnd == amount }
+        composeRule.onNodeWithTag("dashboard_summary").assertExists()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestDatabaseModule {
+        @Provides @Singleton
+        fun database(@ApplicationContext context: Context): ExpenseManagerDatabase =
+            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+        @Provides fun dao(database: ExpenseManagerDatabase): TransactionDao = database.transactionDao()
+
+        @Provides @Singleton
+        fun budgets(): MonthlyBudgetRepository = object : MonthlyBudgetRepository {
+            private val limits = MutableStateFlow<Map<YearMonth, Long>>(emptyMap())
+            override fun observeLimits() = limits
+            override suspend fun setLimit(month: YearMonth, amountVnd: Long?) {
+                limits.value = if (amountVnd == null) limits.value - month else limits.value + (month to amountVnd)
+            }
+        }
+    }
+}
