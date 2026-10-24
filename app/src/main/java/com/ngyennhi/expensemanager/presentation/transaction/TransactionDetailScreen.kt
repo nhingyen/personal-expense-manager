@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -57,7 +58,7 @@ internal fun TransactionDetailScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(
         containerColor = ExpenseManagerColors.background,
-        topBar = { TransactionTopBar(stringResource(R.string.transaction_detail_title), onBack) },
+        topBar = { AppTopBar(stringResource(R.string.transaction_detail_title), onBack = onBack) },
     ) { padding ->
         when {
             state.loadStatus == LoadStatus.LOADING && record == null ->

@@ -71,6 +71,10 @@ class TransactionViewModel @Inject constructor(
 
     fun selectMonth(month: YearMonth) = update { it.copy(selectedMonth = month) }
 
+    fun showAllForMonth(month: YearMonth) = update {
+        it.copy(selectedMonth = month, query = "", filter = TransactionFilter.ALL)
+    }
+
     fun resetFilters() = update {
         it.copy(query = "", filter = TransactionFilter.ALL, selectedMonth = YearMonth.now())
     }

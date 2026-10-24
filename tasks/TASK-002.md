@@ -25,7 +25,7 @@
 9. Hilt provides one application-scoped `ExpenseManagerDatabase`, its `TransactionDao`, a `TransactionRepository` backed by `RoomTransactionRepository`, and all four use cases. A focused Hilt integration test resolves the add and observe use cases and sees an added record through the observed list. The `domain` package has no Hilt imports or annotations.
 10. A persistence test closes and reopens a file-backed `ExpenseManagerDatabase`, then confirms the saved record and its fields remain available. An in-memory database alone does not satisfy this check. The initial schema is documented or exported for later migration review.
 11. `settings.gradle.kts` still includes only `:app`. Source review confirms `presentation -> domain <- data`, with `di` wiring implementations at the app boundary: `domain` imports no Android, Compose, Room, Hilt, `data`, or `presentation` types; `data` does not depend on `presentation`; and `presentation` does not import DAO, database, or entity types.
-12. The change adds no Compose UI, Dashboard, charts, or Settings screen or behavior; the existing starter screen remains the app entry point.
+12. The change adds no Compose UI, Home, charts, or Settings screen or behavior; the existing starter screen remains the app entry point.
 13. `:app:assembleDebug`, `:app:testDebugUnitTest`, and `:app:lintDebug` pass with the Gradle wrapper. Run `:app:connectedDebugAndroidTest` on a device or emulator for the Room tests and record the command, device API level, and result. Do not mark the task complete while a required check is unverified.
 
 ## Test plan
@@ -40,7 +40,7 @@ Use test database names isolated from user data, and close test databases after 
 
 ## Out of scope
 
-No Compose UI, Dashboard, charts, or Settings work belongs to TASK-002. Record screens are planned for TASK-003, and monthly calculations for TASK-004. Account or network sync, currency conversion, and database migrations are also outside this task. Document the initial Room schema so a later schema change can be reviewed.
+No Compose UI, Home, charts, or Settings work belongs to TASK-002. Record screens are planned for TASK-003, and monthly calculations for TASK-004. Account or network sync, currency conversion, and database migrations are also outside this task. Document the initial Room schema so a later schema change can be reviewed.
 
 ## Implementation order
 

@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 
 private fun figmaTextStyle(size: Int, weight: FontWeight) = TextStyle(
@@ -11,6 +12,7 @@ private fun figmaTextStyle(size: Int, weight: FontWeight) = TextStyle(
     fontWeight = weight,
     fontSize = size.sp,
     lineHeight = (size * 1.35f).sp,
+    lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
     letterSpacing = 0.sp,
 )
 

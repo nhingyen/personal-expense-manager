@@ -11,7 +11,7 @@ Build an offline personal expense tracker that demonstrates clear Android fundam
 - Persist records locally with Room so core flows work without an account or network.
 - Handle empty, loading, and error states in a usable Material 3 Compose UI.
 
-Money will be stored as a positive `Long` count of whole VND; display formatting belongs to presentation. The initial release has no sync, authentication, budget alerts, or currency conversion.
+Money will be stored as a positive `Long` count of whole VND; display formatting belongs to presentation. The initial release has no sync, authentication, OS notification delivery, or currency conversion. TASK-004 additionally supports a local monthly spending limit and in-app budget notices.
 
 ## Technical direction
 
@@ -19,4 +19,4 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
-The single app module has a pure domain transaction contract and use cases, Room persistence, Hilt wiring, and a Compose transaction list/add/edit/detail flow with ViewModel state and Navigation. Vietnamese is the default locale and English resources are provided. TASK-003 build, unit, lint, and emulator tests have run on API 35; minimum-SDK startup verification on API 26 from TASK-001 remains open. Monthly summary and other application behavior remain planned. The [roadmap](../tasks/ROADMAP.md) defines the order of work.
+The single app module has pure domain transaction, monthly-summary, and monthly-budget rules, Room transaction persistence, Hilt wiring, and Compose Home/list/add/edit/detail flows with ViewModel StateFlow and Navigation. Home shows a clock-based greeting, selected-month totals, Budget/Categories shortcuts, an editable persisted monthly spending limit with actual expense progress, budget notices, and up to five recent Room records. Categories reuse form suggestions and saved transaction categories to prefill Add. Bottom navigation is deferred to a separate branch; Home uses View all to open Transactions and existing Add buttons to open the form. Vietnamese is the default locale and English resources are provided. TASK-004 verification is recorded in its task document; minimum-SDK startup verification on API 26 from TASK-001 remains open. The [roadmap](../tasks/ROADMAP.md) defines the order of work.

@@ -1,4 +1,4 @@
-package com.ngyennhi.expensemanager.presentation.transaction
+package com.ngyennhi.expensemanager.presentation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,29 +11,77 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.ngyennhi.expensemanager.presentation.home.HomeScreen
+import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
+import com.ngyennhi.expensemanager.presentation.home.HomeActions
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionListScreen
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionFormScreen
+import com.ngyennhi.expensemanager.presentation.transaction.TransactionDetailScreen
 
+private const val HOME_ROUTE = "home"
 private const val LIST_ROUTE = "transactions"
 private const val ADD_ROUTE = "add"
 private const val DETAIL_ROUTE = "detail/{id}"
 private const val EDIT_ROUTE = "edit/{id}"
 
 @Composable
-fun TransactionApp(viewModel: TransactionViewModel) {
+fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
 
+    // Home is always the root. Replace secondary routes and any existing list entry,
+    // including when a write was started directly from Home.
+    val returnToList: () -> Unit = {
+        navController.navigate(LIST_ROUTE) {
+            popUpTo(HOME_ROUTE)
+            launchSingleTop = true
+        }
+    }
+    val openAdd: () -> Unit = {
+        viewModel.startAdd()
+        navController.navigate(ADD_ROUTE) { launchSingleTop = true }
+    }
+    val openRecord: (Long) -> Unit = { id ->
+        viewModel.selectRecord(id)
+        navController.navigate("detail/$id")
+    }
     LaunchedEffect(viewModel, navController) {
         viewModel.navigationEvents.collect {
-            navController.popBackStack(LIST_ROUTE, inclusive = false)
+            returnToList()
         }
     }
 
-    val returnToList: () -> Unit = {
-        navController.popBackStack(LIST_ROUTE, inclusive = false)
-        Unit
-    }
-
-    NavHost(navController, startDestination = LIST_ROUTE, modifier = Modifier.fillMaxSize()) {
+    NavHost(navController, startDestination = HOME_ROUTE, modifier = Modifier.fillMaxSize()) {
+        composable(HOME_ROUTE) {
+            LaunchedEffect(Unit) { homeViewModel.refreshGreeting() }
+            HomeScreen(
+                state = homeState,
+                onPreviousMonth = { homeViewModel.changeMonth(-1) },
+                onNextMonth = { homeViewModel.changeMonth(1) },
+                onAdd = openAdd,
+                onViewAll = {
+                    viewModel.showAllForMonth(homeState.selectedMonth)
+                    returnToList()
+                },
+                onOpenRecord = openRecord,
+                onRetry = homeViewModel::retryObservation,
+                homeActions = HomeActions(
+                    onEditBudget = homeViewModel::startBudgetEdit,
+                    onBudgetInput = homeViewModel::setBudgetInput,
+                    onSaveBudget = homeViewModel::saveMonthlyBudget,
+                    onClearBudget = homeViewModel::clearMonthlyBudget,
+                    onRetryBudgets = homeViewModel::retryBudgets,
+                    onChooseCategory = { category, type ->
+                        viewModel.startAdd()
+                        viewModel.setCategory(category)
+                        viewModel.setType(type)
+                        navController.navigate(ADD_ROUTE) { launchSingleTop = true }
+                    },
+                ),
+            )
+        }
         composable(LIST_ROUTE) {
             TransactionListScreen(
                 state = state,
@@ -41,14 +89,8 @@ fun TransactionApp(viewModel: TransactionViewModel) {
                 onFilterChange = viewModel::setFilter,
                 onMonthChange = viewModel::changeMonth,
                 onResetFilters = viewModel::resetFilters,
-                onAdd = {
-                    viewModel.startAdd()
-                    navController.navigate(ADD_ROUTE)
-                },
-                onOpenRecord = { id ->
-                    viewModel.selectRecord(id)
-                    navController.navigate("detail/$id")
-                },
+                onAdd = openAdd,
+                onOpenRecord = openRecord,
                 onRetry = viewModel::retryObservation,
             )
         }

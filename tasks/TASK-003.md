@@ -14,7 +14,7 @@
 - Support opening a record from the list, editing it, and deleting it after confirmation. Define navigation outcomes: a successful save returns to the list; a successful delete returns to the list; cancel or back leaves stored data unchanged.
 - Add transaction list search, income/expense type filters, and month selection shown in the Figma reference, applied to the observed records. Preserve these selections when returning from the form or detail. Monthly financial totals remain TASK-004.
 - Localize every visible transaction-screen string in default Vietnamese and English resource sets with matching keys and placeholders. Format VND and dates for the active locale in presentation; provide accessible labels and layouts that tolerate scrolling and font scaling. Add dependencies only when needed through the version catalog.
-- Keep list, add/edit form, and detail composables in separate files named after each screen. Keep screen-specific helpers private in their screen file and shared UI helpers in `TransactionComponents.kt`.
+- Keep list, add/edit form, and detail composables in separate files named after each screen. Keep screen-specific helpers private in their screen file and transaction-specific shared UI helpers in `TransactionComponents.kt`. Keep the feature-independent `AppTopBar` in `presentation/common/components` for reuse across features.
 
 ## Acceptance criteria
 
@@ -30,6 +30,7 @@
 10. The code preserves the Clean Architecture direction `presentation -> domain <- data`: ViewModels depend on domain use cases, the domain has no Android/Compose/Room/Hilt imports, and Compose has no direct Room access. Transaction screens use Material 3 components and reuse the existing `ui.theme` colors, typography, and theme rather than defining duplicate screen-local versions. All transaction UI surfaces use solid fills with no gradients. `settings.gradle.kts` still includes only `:app`.
 11. Focused tests or documented device checks verify the create, edit, delete, validation, list update, filtering, and empty/loading/error flows. Run `:app:assembleDebug`, `:app:testDebugUnitTest`, and `:app:lintDebug`; run relevant Android UI tests with `:app:connectedDebugAndroidTest` when added. Record exact commands, results, and device API level before marking this task complete. Do not claim a check passed unless it ran.
 12. `TransactionListScreen.kt`, `TransactionFormScreen.kt`, and `TransactionDetailScreen.kt` each own their screen and private helpers. Shared error and unavailable states live in `TransactionComponents.kt`. Extracting the screens preserves their signatures, navigation, UI state, resources, and existing flow tests.
+13. List, add/edit, and detail use the same `presentation.common.components.AppTopBar`. It has no transaction imports and accepts a title, optional back callback, optional action content, and a `Modifier`. Extraction preserves the existing title styling, colors, back label, actions, and navigation behavior.
 
 ## Test plan
 
@@ -41,7 +42,7 @@
 
 ## Out of scope
 
-Monthly income, expense, and balance calculations belong to TASK-004. Dashboard, Statistics, Budget, and Wallet screens or behavior are outside TASK-003, including their navigation destinations. Charts, transfers, category management, sync, authentication, currency conversion, and an in-app language picker are also outside this task. Do not add placeholder destinations or controls for these features.
+Monthly income, expense, and balance calculations belong to TASK-004. Home, Statistics, Budget, and Wallet screens or behavior are outside TASK-003, including their navigation destinations. Charts, transfers, category management, sync, authentication, currency conversion, and an in-app language picker are also outside this task. Do not add placeholder destinations or controls for these features.
 
 ## Four implementation phases
 
@@ -77,7 +78,7 @@ These are milestones within TASK-003, which remains one reviewable task. Complet
 2. The add form renders empty input and field-error states; the edit form renders a prefilled transaction. Type, amount, category, date, and optional note fields are reachable with the keyboard and on a scrolling screen.
 3. A selected transaction can display the edit and delete entry points. Delete confirmation presents confirm and cancel actions; cancel closes the dialog in the UI harness without invoking deletion.
 4. The screens reuse the shared theme and Material 3 components, contain no gradients, and render all visible copy from matching Vietnamese and English resources. Record preview or device evidence for both locales.
-5. The UI contains only transaction destinations for this task; Dashboard, Statistics, Budget, and Wallet screens and navigation entries are absent.
+5. The UI contains only transaction destinations for this task; Home, Statistics, Budget, and Wallet screens and navigation entries are absent.
 
 ### Phase 3 — MVVM Integration
 
@@ -118,7 +119,7 @@ These are milestones within TASK-003, which remains one reviewable task. Complet
 - Command: `.\gradlew.bat --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:connectedDebugAndroidTest` — **BUILD SUCCESSFUL**. The four requested Gradle tasks all completed. Unit suite: 13 passed, 0 failed. Android suite: 7 passed, 0 failed on Pixel_5 (AVD), API 35. Lint: 0 errors, 13 warnings (dependency version suggestions and pre-existing resources/manifest items).
 - `TransactionViewModelTest` covers first observation, empty and error recovery, search/type/month, invalid and valid input, duplicate save prevention, edit with the same ID, failed write, and unknown IDs. `TransactionScreenStateTest` checks loading, empty, no-match, error, Add, and Retry UI. `TransactionFlowTest` uses an in-memory Room database through Hilt to verify expense create/edit/cancel delete/confirm delete, income creation through a suggested category, and observed list refresh.
 - Device review on Pixel_5 API 35: English empty list/form and Vietnamese form were viewed at normal font size; Vietnamese list/form were viewed at 1.3× font size. Text remained readable; the form scrolled, the keyboard could be dismissed for Save, and system insets were respected. Transaction screens use the shared light theme, Material 3 controls, labeled actions, and solid fills. Vietnamese and English resource keys match. The Figma reference has only Vietnamese populated light screens, so final English, dark, and larger-screen designs remain open design decisions.
-- Source review: `settings.gradle.kts` still includes only `:app`; presentation imports domain models/use cases and no Room DAO/entity/database; domain remains Android-free. Dashboard, Statistics, Budget, Wallet, monthly totals, and account fields were not added. No commit or push was made.
+- Source review: `settings.gradle.kts` still includes only `:app`; presentation imports domain models/use cases and no Room DAO/entity/database; domain remains Android-free. Home, Statistics, Budget, Wallet, monthly totals, and account fields were not added. No commit or push was made.
 - Remaining validation: the project minimum SDK is 26, but connected tests ran on API 35 only; API 26 device startup is an existing TASK-001 follow-up. The Figma icons are 1× PNG exports and may look softer on higher-density devices; vector or multi-density asset refinement can follow a later design pass.
 
 ## Screen extraction verification — 2026-10-22
@@ -126,4 +127,11 @@ These are milestones within TASK-003, which remains one reviewable task. Complet
 - Replaced the 612-line `TransactionScreens.kt` with `TransactionListScreen.kt` (222 lines), `TransactionFormScreen.kt` (277 lines), and `TransactionDetailScreen.kt` (165 lines). Screen-specific helpers remain private; shared `ErrorBanner` and `UnavailableState` moved to `TransactionComponents.kt`.
 - Consulted the Figma detail frame `3:9871` through MCP. Screen and helper bodies were preserved during extraction; only `UnavailableState` changed from private to internal so form and detail can share it. Screen signatures, navigation, state, resources, and ViewModel behavior are unchanged. No dependencies were added.
 - Command: `.\gradlew.bat --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:connectedDebugAndroidTest` — **BUILD SUCCESSFUL** after import cleanup. Unit suite: 13 tests, 0 failures/errors. Android suite: 7 tests, 0 failures/errors on Pixel_5 (AVD), API 35. Lint: 0 errors, 13 warnings. Existing tests cover list states and the create/edit/cancel-delete/confirm-delete flow.
+- `git diff --check` passed. API 26 startup remains the existing TASK-001 follow-up.
+
+## Shared top bar extraction verification — 2026-10-22
+
+- Moved `TransactionTopBar` to `presentation/common/components/AppTopBar.kt` and renamed it `AppTopBar`. List, add/edit, and detail now import the common component. Added an optional `Modifier` forwarded to Material 3 `TopAppBar`; title styling, background, localized back label, back callback, and action content are preserved. The common component imports no transaction types. Updated the scope, acceptance criteria, and architecture documentation.
+- Consulted the Figma Add transaction frame `3:9803` through MCP; this extraction preserves the existing rendering and behavior. No dependencies or new tests were added; existing screen-state and transaction-flow tests provide regression coverage.
+- Command: `.\gradlew.bat --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:connectedDebugAndroidTest` with Android Studio's bundled JBR — **BUILD SUCCESSFUL**. Unit suite: 13 tests, 0 failures/errors/skips. Android suite: 7 tests, 0 failures/errors/skips on Pixel_5 (AVD), Android 15 / API 35. Lint: 0 errors, 15 warnings concerning dependency versions, manifest label, unused colors, and launcher resources; none point to the changed Kotlin files.
 - `git diff --check` passed. API 26 startup remains the existing TASK-001 follow-up.

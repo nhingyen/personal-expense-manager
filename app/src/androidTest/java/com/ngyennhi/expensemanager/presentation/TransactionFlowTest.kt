@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -60,6 +61,7 @@ class TransactionFlowTest {
     @Test
     fun createEditCancelDeleteAndConfirmDeleteUseRoom() {
         val activity = composeRule.activity
+        composeRule.onNodeWithTag("home_view_all").performScrollTo().performClick()
         composeRule.onNodeWithText(activity.getString(R.string.empty_transactions_title)).assertExists()
 
         composeRule.onNodeWithTag("add_transaction_button").performClick()
@@ -111,6 +113,7 @@ class TransactionFlowTest {
     @Test
     fun createIncomeUsingSuggestedCategory() {
         val activity = composeRule.activity
+        composeRule.onNodeWithTag("home_view_all").performScrollTo().performClick()
         composeRule.onNodeWithTag("add_transaction_button").performClick()
         composeRule.onNodeWithText(activity.getString(R.string.type_income)).performClick()
         composeRule.onNodeWithTag("amount_input").performTextInput("125000")
