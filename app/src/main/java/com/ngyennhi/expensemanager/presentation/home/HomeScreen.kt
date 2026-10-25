@@ -64,6 +64,7 @@ fun HomeScreen(
     onOpenRecord: (Long) -> Unit,
     onRetry: () -> Unit,
     homeActions: HomeActions,
+    showFloatingAdd: Boolean = true,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     var panel by rememberSaveable { mutableStateOf<HomePanel?>(null) }
@@ -86,7 +87,7 @@ fun HomeScreen(
             }
         }) },
         floatingActionButton = {
-            if (!state.isEmpty) {
+            if (showFloatingAdd && !state.isEmpty) {
                 ExtendedFloatingActionButton(
                     onClick = onAdd,
                     modifier = Modifier.testTag("home_add"),
@@ -103,7 +104,7 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
             LazyColumn(
                 modifier = Modifier.fillMaxSize().testTag("home_content"),
-                contentPadding = PaddingValues(bottom = 96.dp),
+                contentPadding = PaddingValues(bottom = if (showFloatingAdd) 96.dp else 16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 if (state.error != null || state.loadStatus == HomeLoadStatus.ERROR) {

@@ -51,6 +51,7 @@ internal fun TransactionListScreen(
     onAdd: () -> Unit,
     onOpenRecord: (Long) -> Unit,
     onRetry: () -> Unit,
+    showFloatingAdd: Boolean = true,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val searchLabel = stringResource(R.string.search_transactions)
@@ -64,7 +65,7 @@ internal fun TransactionListScreen(
             })
         },
         floatingActionButton = {
-            if (state.hasRecordsInMonth || state.query.isNotBlank() || state.filter != TransactionFilter.ALL) {
+            if (showFloatingAdd && (state.hasRecordsInMonth || state.query.isNotBlank() || state.filter != TransactionFilter.ALL)) {
                 ExtendedFloatingActionButton(
                     onClick = onAdd,
                     modifier = Modifier.testTag("add_transaction_button"),
@@ -92,7 +93,7 @@ internal fun TransactionListScreen(
                 BasicTextField(
                     value = state.query,
                     onValueChange = onQueryChange,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("transaction_search"),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = ExpenseManagerColors.textPrimary),
                     cursorBrush = SolidColor(ExpenseManagerColors.primary),
@@ -141,7 +142,8 @@ internal fun TransactionListScreen(
                         )
                     }
                     else -> LazyColumn(
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp),
+                        modifier = Modifier.testTag("transaction_list"),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = if (showFloatingAdd) 96.dp else 16.dp),
                     ) {
                         itemsIndexed(visible, key = { _, record -> record.id }) { index, record ->
                             if (index == 0 || visible[index - 1].date != record.date) {

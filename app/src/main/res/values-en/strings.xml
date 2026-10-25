@@ -1,4 +1,8 @@
 <resources>
+    <string name="nav_add">Add</string>
+    <string name="statistics_title">Statistics</string>
+    <string name="settings_title">Settings</string>
+    <string name="navigation_coming_soon">%1$s will be available in a future version.</string>
     <string name="app_name">Personal Expense Manager</string>
     <string name="greeting">Hello %1$s!</string>
     <string name="greeting_name">Android</string>

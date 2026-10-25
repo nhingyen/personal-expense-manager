@@ -1,4 +1,8 @@
 <resources>
+    <string name="nav_add">Thêm</string>
+    <string name="statistics_title">Thống kê</string>
+    <string name="settings_title">Cài đặt</string>
+    <string name="navigation_coming_soon">%1$s sẽ có trong phiên bản sau.</string>
     <string name="app_name">Quản lý chi tiêu</string>
     <string name="greeting">Xin chào %1$s!</string>
     <string name="greeting_name">Android</string>

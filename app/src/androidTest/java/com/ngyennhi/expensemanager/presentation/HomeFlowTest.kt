@@ -2,6 +2,14 @@ package com.ngyennhi.expensemanager.presentation
 
 import android.content.Context
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -65,6 +73,104 @@ class HomeFlowTest {
 
     @Before fun setUp() { hiltRule.inject(); awaitReady() }
     @After fun tearDown() { database.close() }
+
+    @Test
+    fun primaryTabsPreserveFiltersAndRecreationRestoresSelectedDestination() {
+        val month = home.uiState.value.selectedMonth.minusMonths(2)
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+        composeRule.onNodeWithTag("nav_transactions").performClick().assertIsSelected()
+        composeRule.onNodeWithTag("transaction_search").performTextInput("Coffee")
+        Espresso.closeSoftKeyboard()
+        composeRule.runOnIdle {
+            transactions.selectMonth(month)
+            transactions.setFilter(TransactionFilter.EXPENSE)
+            home.changeMonth(-1)
+        }
+        val homeMonth = home.uiState.value.selectedMonth
+        repeat(3) {
+            composeRule.onNodeWithTag("nav_statistics").performClick().assertIsSelected()
+            composeRule.onNodeWithTag("statistics_placeholder").assertExists()
+            composeRule.onNodeWithTag("nav_settings").performClick().assertIsSelected()
+            composeRule.onNodeWithTag("settings_placeholder").assertExists()
+            composeRule.onNodeWithTag("nav_home").assertIsNotSelected().performClick().assertIsSelected()
+            composeRule.onNodeWithTag("nav_transactions").performClick().performClick()
+            composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
+            assertEquals(month, transactions.uiState.value.selectedMonth)
+            assertEquals(TransactionFilter.EXPENSE, transactions.uiState.value.filter)
+            assertEquals(homeMonth, home.uiState.value.selectedMonth)
+        }
+        composeRule.activityRule.scenario.recreate()
+        awaitReady()
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
+        composeRule.onNodeWithTag("nav_settings").performClick()
+        composeRule.activityRule.scenario.recreate()
+        awaitReady()
+        composeRule.onNodeWithTag("nav_settings").assertIsSelected()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
+
+    @Test
+    fun addActionFromEveryPrimaryTabHidesBarAndBackReturnsToInvoker() {
+        for (tab in listOf("home", "transactions", "statistics", "settings")) {
+            composeRule.onNodeWithTag("nav_$tab").performClick().performClick()
+            composeRule.onNodeWithTag("nav_add")
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected)).performClick()
+            composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
+            composeRule.onNodeWithTag("amount_input").performTextInput("123")
+            Espresso.closeSoftKeyboard()
+            composeRule.activityRule.scenario.recreate()
+            awaitReady()
+            composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
+            composeRule.onNodeWithTag("amount_input").assertTextContains("123", substring = true)
+            assertEquals("123", transactions.uiState.value.form.amountInput)
+            composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
+            composeRule.onNodeWithTag("nav_$tab").assertIsSelected()
+        }
+        assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
+
+    @Test
+    fun listScrollRestoresAcrossTabSwitchAndRecreation() {
+        val date = home.uiState.value.selectedMonth.atDay(15)
+        runBlocking {
+            repeat(30) { index ->
+                repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Food", date, "Record $index"))
+            }
+        }
+        composeRule.waitUntil(5_000) { transactions.uiState.value.transactions.size == 30 }
+        composeRule.onNodeWithTag("nav_transactions").performClick()
+        val id = transactions.uiState.value.visibleTransactions[20].id
+        composeRule.onNodeWithTag("transaction_list").performScrollToIndex(20)
+        composeRule.onNodeWithTag("transaction_row_$id").assertIsDisplayed()
+        val before = composeRule.onNodeWithTag("transaction_row_$id").fetchSemanticsNode().boundsInRoot.top
+        composeRule.onNodeWithTag("nav_statistics").performClick()
+        composeRule.onNodeWithTag("nav_transactions").performClick()
+        composeRule.onNodeWithTag("transaction_row_$id").assertIsDisplayed()
+        assertEquals(before, composeRule.onNodeWithTag("transaction_row_$id").fetchSemanticsNode().boundsInRoot.top, 1f)
+        composeRule.activityRule.scenario.recreate()
+        awaitReady()
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        composeRule.onNodeWithTag("transaction_row_$id").assertIsDisplayed()
+    }
+
+    @Test
+    fun directDetailEditHideBarAndSuccessfulSaveSelectsTransactionsWithoutSecondaryHistory() {
+        val id = seed()
+        openRecent(id)
+        composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
+        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
+        composeRule.runOnIdle { transactions.setAmount("200") }
+        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        awaitRows(1)
+        composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
 
     @Test
     fun budgetSetupValidationRoomUpdatesNotificationsAndClearingWork() {
