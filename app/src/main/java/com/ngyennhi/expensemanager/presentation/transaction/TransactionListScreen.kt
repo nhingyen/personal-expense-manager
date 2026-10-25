@@ -25,7 +25,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -33,10 +38,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
+import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.presentation.common.components.MonthSelector
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
@@ -46,6 +54,7 @@ internal fun TransactionListScreen(
     state: TransactionUiState,
     onQueryChange: (String) -> Unit,
     onFilterChange: (TransactionFilter) -> Unit,
+    onApplyFilters: (String?, TransactionDateRange?) -> Unit,
     onMonthChange: (Long) -> Unit,
     onResetFilters: () -> Unit,
     onAdd: () -> Unit,
@@ -55,17 +64,18 @@ internal fun TransactionListScreen(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val searchLabel = stringResource(R.string.search_transactions)
+    var showFilters by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         containerColor = ExpenseManagerColors.background,
         topBar = {
             AppTopBar(stringResource(R.string.transactions_title), action = {
-                IconButton(onClick = onResetFilters) {
-                    Image(painterResource(R.drawable.ic_filter), stringResource(R.string.reset_filters), Modifier.size(22.dp))
+                IconButton(onClick = { showFilters = true }, modifier = Modifier.testTag("open_transaction_filters")) {
+                    Image(painterResource(R.drawable.ic_filter), stringResource(R.string.transaction_filters), Modifier.size(22.dp))
                 }
             })
         },
         floatingActionButton = {
-            if (showFloatingAdd && (state.hasRecordsInMonth || state.query.isNotBlank() || state.filter != TransactionFilter.ALL)) {
+            if (showFloatingAdd && (state.hasRecordsInMonth || state.hasActiveFilters)) {
                 ExtendedFloatingActionButton(
                     onClick = onAdd,
                     modifier = Modifier.testTag("add_transaction_button"),
@@ -93,7 +103,8 @@ internal fun TransactionListScreen(
                 BasicTextField(
                     value = state.query,
                     onValueChange = onQueryChange,
-                    modifier = Modifier.weight(1f).testTag("transaction_search"),
+                    modifier = Modifier.weight(1f).testTag("transaction_search")
+                        .semantics { contentDescription = searchLabel },
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = ExpenseManagerColors.textPrimary),
                     cursorBrush = SolidColor(ExpenseManagerColors.primary),
@@ -115,11 +126,33 @@ internal fun TransactionListScreen(
                 TypeChip(stringResource(R.string.type_income), state.filter == TransactionFilter.INCOME,
                     { onFilterChange(TransactionFilter.INCOME) }, Modifier.weight(1f))
             }
-            MonthSelector(
-                label = formatMonth(state.selectedMonth, locale),
-                onPreviousMonth = { onMonthChange(-1) },
-                onNextMonth = { onMonthChange(1) },
-            )
+            val range = state.dateRange
+            if (range == null) {
+                MonthSelector(
+                    label = formatMonth(state.selectedMonth, locale),
+                    onPreviousMonth = { onMonthChange(-1) },
+                    onNextMonth = { onMonthChange(1) },
+                )
+            } else {
+                TextButton(onClick = { showFilters = true }, modifier = Modifier.fillMaxWidth()
+                    .testTag("active_filter_range")) {
+                    Text(stringResource(R.string.filter_range_value,
+                        formatDate(range.start, locale), formatDate(range.endInclusive, locale)))
+                }
+            }
+            if (state.hasActiveFilters || state.selectedMonth != java.time.YearMonth.now()) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    state.selectedCategory?.let { category ->
+                        TextButton(onClick = { showFilters = true }, modifier = Modifier.weight(1f)
+                            .testTag("active_filter_category")) {
+                            Text(stringResource(R.string.filter_category_value, category))
+                        }
+                    }
+                    TextButton(onClick = onResetFilters, modifier = Modifier.testTag("reset_transaction_filters")) {
+                        Text(stringResource(R.string.reset_filters))
+                    }
+                }
+            }
             if (state.loadStatus == LoadStatus.ERROR) {
                 ErrorBanner(stringResource(R.string.load_transactions_error), onRetry)
                 if (state.transactions.isNotEmpty()) {
@@ -134,11 +167,12 @@ internal fun TransactionListScreen(
                         CircularProgressIndicator(Modifier.align(Alignment.Center).testTag("transactions_loading"))
                     state.loadStatus == LoadStatus.ERROR && state.transactions.isEmpty() -> Unit
                     visible.isEmpty() -> {
-                        val filtered = state.query.isNotBlank() || state.filter != TransactionFilter.ALL
+                        val filtered = state.hasActiveFilters
                         EmptyState(
                             if (filtered) R.string.no_matches_title else R.string.empty_transactions_title,
                             if (filtered) R.string.no_matches_body else R.string.empty_transactions_body,
                             if (filtered) null else onAdd,
+                            if (filtered) onResetFilters else null,
                         )
                     }
                     else -> LazyColumn(
@@ -159,10 +193,19 @@ internal fun TransactionListScreen(
             }
         }
     }
+    if (showFilters) {
+        TransactionFilterSheet(state, onDismiss = { showFilters = false }, onApply = { category, range ->
+            onApplyFilters(category, range)
+            showFilters = false
+        }, onReset = {
+            onResetFilters()
+            showFilters = false
+        })
+    }
 }
 
 @Composable
-private fun EmptyState(title: Int, body: Int, onAdd: (() -> Unit)?) {
+private fun EmptyState(title: Int, body: Int, onAdd: (() -> Unit)?, onReset: (() -> Unit)?) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -176,6 +219,12 @@ private fun EmptyState(title: Int, body: Int, onAdd: (() -> Unit)?) {
             Spacer(Modifier.height(16.dp))
             Button(onClick = onAdd, modifier = Modifier.testTag("add_transaction_button")) {
                 Text(stringResource(R.string.add_transaction))
+            }
+        }
+        if (onReset != null) {
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onReset, modifier = Modifier.testTag("empty_reset_filters")) {
+                Text(stringResource(R.string.reset_filters))
             }
         }
     }

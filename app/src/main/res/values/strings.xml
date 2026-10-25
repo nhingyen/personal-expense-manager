@@ -1,4 +1,15 @@
 <resources>
+    <string name="transaction_filters">Bộ lọc giao dịch</string>
+    <string name="filter_all_categories">Tất cả danh mục</string>
+    <string name="filter_period">Khoảng thời gian</string>
+    <string name="filter_start_date_value">Từ ngày: %1$s</string>
+    <string name="filter_end_date_value">Đến ngày: %1$s</string>
+    <string name="filter_invalid_range">Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.</string>
+    <string name="filter_selected_month">Theo tháng: %1$s</string>
+    <string name="filter_custom_range">Chọn khoảng ngày</string>
+    <string name="filter_range_value">%1$s – %2$s</string>
+    <string name="filter_category_value">Danh mục: %1$s</string>
+    <string name="apply_filters">Áp dụng bộ lọc</string>
     <string name="nav_add">Thêm</string>
     <string name="statistics_title">Thống kê</string>
     <string name="settings_title">Cài đặt</string>

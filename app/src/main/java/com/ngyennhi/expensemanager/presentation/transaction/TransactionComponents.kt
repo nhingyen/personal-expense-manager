@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,17 +54,17 @@ internal fun TypeChip(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.heightIn(min = 48.dp).clickable(onClick = onClick),
+        modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected }.clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth().height(36.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 36.dp)
                 .background(
                     if (selected) ExpenseManagerColors.primaryContainer else Color.White,
                     RoundedCornerShape(100.dp),
                 )
                 .border(1.dp, if (selected) ExpenseManagerColors.primaryContainer else ExpenseManagerColors.outline,
-                    RoundedCornerShape(100.dp)),
+                    RoundedCornerShape(100.dp)).padding(horizontal = 8.dp, vertical = 9.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(

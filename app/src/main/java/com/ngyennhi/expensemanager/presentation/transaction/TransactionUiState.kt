@@ -1,6 +1,7 @@
 package com.ngyennhi.expensemanager.presentation.transaction
 
 import com.ngyennhi.expensemanager.domain.model.Transaction
+import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import java.time.LocalDate
 import java.time.YearMonth
@@ -33,6 +34,9 @@ data class TransactionUiState(
     val selectedMonth: YearMonth = YearMonth.now(),
     val query: String = "",
     val filter: TransactionFilter = TransactionFilter.ALL,
+    val selectedCategory: String? = null,
+    val dateRange: TransactionDateRange? = null,
+    val visibleTransactions: List<Transaction> = emptyList(),
     val selectedId: Long? = null,
     val form: TransactionFormState = TransactionFormState(),
     val actionError: ActionError? = null,
@@ -41,16 +45,15 @@ data class TransactionUiState(
     val selectedRecord: Transaction?
         get() = transactions.firstOrNull { it.id == selectedId }
 
-    val visibleTransactions: List<Transaction>
-        get() {
-            val search = query.trim().lowercase(Locale.ROOT)
-            return transactions.filter { record ->
-                YearMonth.from(record.date) == selectedMonth &&
-                    (filter == TransactionFilter.ALL || record.type.name == filter.name) &&
-                    (search.isEmpty() || record.category.lowercase(Locale.ROOT).contains(search) ||
-                        record.note.orEmpty().lowercase(Locale.ROOT).contains(search))
-            }
-        }
+    val period: TransactionDateRange
+        get() = dateRange ?: TransactionDateRange(selectedMonth.atDay(1), selectedMonth.atEndOfMonth())
+
+    val hasActiveFilters: Boolean
+        get() = query.isNotBlank() || filter != TransactionFilter.ALL || selectedCategory != null || dateRange != null
+
+    val availableCategories: List<String>
+        get() = (transactions.map { it.category.trim() } + listOfNotNull(selectedCategory))
+            .distinctBy { it.lowercase(Locale.ROOT) }.sortedBy { it.lowercase(Locale.ROOT) }
 
     val hasRecordsInMonth: Boolean
         get() = transactions.any { YearMonth.from(it.date) == selectedMonth }

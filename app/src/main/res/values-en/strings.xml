@@ -1,4 +1,15 @@
 <resources>
+    <string name="transaction_filters">Transaction filters</string>
+    <string name="filter_all_categories">All categories</string>
+    <string name="filter_period">Period</string>
+    <string name="filter_start_date_value">From: %1$s</string>
+    <string name="filter_end_date_value">To: %1$s</string>
+    <string name="filter_invalid_range">The end date must be on or after the start date.</string>
+    <string name="filter_selected_month">By month: %1$s</string>
+    <string name="filter_custom_range">Choose date range</string>
+    <string name="filter_range_value">%1$s – %2$s</string>
+    <string name="filter_category_value">Category: %1$s</string>
+    <string name="apply_filters">Apply filters</string>
     <string name="nav_add">Add</string>
     <string name="statistics_title">Statistics</string>
     <string name="settings_title">Settings</string>
