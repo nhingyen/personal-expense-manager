@@ -1,6 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 android {
@@ -16,7 +22,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.ngyennhi.expensemanager.HiltTestRunner"
     }
 
     buildTypes {
@@ -33,6 +39,11 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        generateLocaleConfig = true
+        // Keep library translations out of the generated Android 13+ language list.
+        localeFilters += listOf("vi", "en")
+    }
 }
 
 dependencies {
@@ -44,11 +55,24 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.hilt.android)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.hilt.android.compiler)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.android.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
