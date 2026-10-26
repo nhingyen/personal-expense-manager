@@ -60,6 +60,7 @@ class HomeViewModel @Inject constructor(
     private var sourceFailed = false
     private var budgetObservationJob: Job? = null
     private var budgetLimits: Map<YearMonth, Long>? = null
+    private var budgetInputEdited = false
 
     init {
         retryObservation()
@@ -69,6 +70,7 @@ class HomeViewModel @Inject constructor(
     // User clicks the previous or next month
     fun changeMonth(delta: Long) {
         val current = mutableState.value
+        if (current.isSavingBudget) return
         val newMonth = current.selectedMonth.plusMonths(delta)
 
         savedStateHandle[MONTH_KEY] = newMonth.toString()
@@ -85,6 +87,8 @@ class HomeViewModel @Inject constructor(
                 stale = sourceFailed
             )
         }
+        // A draft belongs to one month; never carry it into a different month's editor.
+        startBudgetEdit()
     }
 
     fun refreshGreeting() {
@@ -93,11 +97,15 @@ class HomeViewModel @Inject constructor(
 
     fun retryBudgets() {
         budgetObservationJob?.cancel()
-        mutableState.value = mutableState.value.copy(budgetLoadStatus = HomeLoadStatus.LOADING, budget = null)
+        budgetLimits = null
+        mutableState.value = mutableState.value.copy(budgetLoadStatus = HomeLoadStatus.LOADING,
+            budget = null, budgetLimitVnd = null)
         budgetObservationJob = viewModelScope.launch {
             observeBudgets().catch { cause ->
                 if (cause is CancellationException) throw cause
-                mutableState.value = mutableState.value.copy(budgetLoadStatus = HomeLoadStatus.ERROR, budget = null)
+                budgetLimits = null
+                mutableState.value = mutableState.value.copy(budgetLoadStatus = HomeLoadStatus.ERROR,
+                    budget = null, budgetLimitVnd = null)
             }.collect { limits ->
                 budgetLimits = limits
                 mutableState.value = mutableState.value.copy(budgetLoadStatus = HomeLoadStatus.READY)
@@ -108,15 +116,20 @@ class HomeViewModel @Inject constructor(
 
     fun startBudgetEdit() {
         val state = mutableState.value
+        if (state.isSavingBudget) return
+        budgetInputEdited = false
         mutableState.value = state.copy(budgetInput = state.budgetLimitVnd?.toString().orEmpty(),
             budgetInputInvalid = false, budgetSaveFailed = false)
     }
 
     fun setBudgetInput(value: String) {
+        if (mutableState.value.isSavingBudget) return
+        budgetInputEdited = true
         mutableState.value = mutableState.value.copy(budgetInput = value, budgetInputInvalid = false, budgetSaveFailed = false)
     }
 
     fun saveMonthlyBudget() {
+        if (mutableState.value.isSavingBudget) return
         val input = mutableState.value.budgetInput.trim()
         val amount = input.takeIf { it.isNotEmpty() && it.all(Char::isDigit) }?.toLongOrNull()
         if (amount == null || amount <= 0) {
@@ -136,6 +149,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 saveBudget(month, amount)
+                budgetInputEdited = false
                 mutableState.value = mutableState.value.copy(budgetSaveVersion = mutableState.value.budgetSaveVersion + 1)
             } catch (cause: CancellationException) {
                 throw cause
@@ -151,6 +165,7 @@ class HomeViewModel @Inject constructor(
         val state = mutableState.value
         val limit = budgetLimits?.get(state.selectedMonth)
         mutableState.value = state.copy(budgetLimitVnd = limit,
+            budgetInput = if (!budgetInputEdited && !state.isSavingBudget) limit?.toString().orEmpty() else state.budgetInput,
             budget = if (state.canShowData && state.budgetLoadStatus == HomeLoadStatus.READY) {
                 state.summary?.let { calculateBudget(it, limit) }
             } else null)

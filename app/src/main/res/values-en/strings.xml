@@ -108,6 +108,9 @@
     <string name="home_budget_remaining">%1$s left to spend this month</string>
     <string name="home_notifications">Notifications</string>
     <string name="home_budget_limit">Monthly spending limit</string>
+    <string name="budget_spent">Spent</string>
+    <string name="budget_remaining">Remaining</string>
+    <string name="budget_no_expenses">No expenses recorded this month.</string>
     <string name="home_budget_save_error">The budget could not be saved. Your input has been kept.</string>
     <string name="home_save_budget">Save budget</string>
     <string name="home_clear_budget">Remove this month’s limit</string>

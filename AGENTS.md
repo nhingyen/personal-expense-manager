@@ -7,5 +7,6 @@ Personal Expense Manager is an Android Kotlin portfolio project. Read [docs/PROJ
 - Before implementing UI, read docs/DESIGN.md and consult the linked Figma design via MCP.
 - Prefer small, reviewable changes tied to a roadmap task. Add dependencies only when the task needs them, through the version catalog.
 - Give each task observable acceptance criteria and update its documentation when scope changes. Add focused tests for domain rules and meaningful data or UI behavior.
+- After every feature task, update README.md to match the scope actually implemented and verified. Do not describe unimplemented features or claim checks that did not run.
 - Before proposing a PR, run the relevant Gradle checks and report what ran. Do not claim a check passed unless it ran.
 - Do not commit, push, or alter Git history unless the user explicitly requests it.
