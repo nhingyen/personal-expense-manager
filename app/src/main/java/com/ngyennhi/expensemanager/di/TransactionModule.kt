@@ -9,6 +9,7 @@ import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.CalculateMonthlySummaryUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
+import com.ngyennhi.expensemanager.domain.usecase.FilterTransactionsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.ObserveTransactionsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.UpdateTransactionUseCase
 import dagger.Binds
@@ -35,6 +36,9 @@ object TransactionDatabaseModule {
 @Module
 @InstallIn(SingletonComponent::class)
 object TransactionUseCaseModule {
+    @Provides
+    fun provideFilterTransactionsUseCase(): FilterTransactionsUseCase = FilterTransactionsUseCase()
+
     @Provides
     fun provideAddTransactionUseCase(repository: TransactionRepository): AddTransactionUseCase =
         AddTransactionUseCase(repository)

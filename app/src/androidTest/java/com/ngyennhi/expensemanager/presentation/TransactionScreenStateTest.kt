@@ -36,6 +36,7 @@ class TransactionScreenStateTest {
                     state = state,
                     onQueryChange = {},
                     onFilterChange = {},
+                    onApplyFilters = { _, _ -> },
                     onMonthChange = {},
                     onResetFilters = {},
                     onAdd = { addCalls++ },

@@ -32,6 +32,7 @@ import com.ngyennhi.expensemanager.di.TransactionDatabaseModule
 import com.ngyennhi.expensemanager.di.MonthlyBudgetStorageModule
 import com.ngyennhi.expensemanager.domain.repository.MonthlyBudgetRepository
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
+import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
 import com.ngyennhi.expensemanager.presentation.home.HomeLoadStatus
@@ -84,6 +85,7 @@ class HomeFlowTest {
         composeRule.runOnIdle {
             transactions.selectMonth(month)
             transactions.setFilter(TransactionFilter.EXPENSE)
+            transactions.applyFilters("Coffee", TransactionDateRange(month.atDay(2), month.plusMonths(1).atDay(4)))
             home.changeMonth(-1)
         }
         val homeMonth = home.uiState.value.selectedMonth
@@ -97,18 +99,75 @@ class HomeFlowTest {
             composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
             assertEquals(month, transactions.uiState.value.selectedMonth)
             assertEquals(TransactionFilter.EXPENSE, transactions.uiState.value.filter)
+            assertEquals("Coffee", transactions.uiState.value.selectedCategory)
+            assertEquals(month.plusMonths(1).atDay(4), transactions.uiState.value.dateRange?.endInclusive)
             assertEquals(homeMonth, home.uiState.value.selectedMonth)
         }
         composeRule.activityRule.scenario.recreate()
         awaitReady()
         composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
         composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
+        assertEquals("Coffee", transactions.uiState.value.selectedCategory)
+        assertEquals(month.atDay(2), transactions.uiState.value.dateRange?.start)
         composeRule.onNodeWithTag("nav_settings").performClick()
         composeRule.activityRule.scenario.recreate()
         awaitReady()
         composeRule.onNodeWithTag("nav_settings").assertIsSelected()
         Espresso.pressBack()
         composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
+
+    @Test
+    fun combinedSearchCategoryAndRangeReactToRoomWritesAndResetFromNoMatches() {
+        val month = home.uiState.value.selectedMonth
+        val first = month.minusMonths(1).atEndOfMonth()
+        val last = month.atDay(2)
+        val ids = runBlocking {
+            listOf(
+                repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Food", first, "Lunch")),
+                repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Food", last, "Lunch")),
+                repository.add(TransactionDraft(TransactionType.INCOME, 100, "Salary", last, "Lunch")),
+                repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Travel", last, "Lunch")),
+            )
+        }
+        composeRule.waitUntil(5_000) { transactions.uiState.value.transactions.size == 4 }
+        composeRule.onNodeWithTag("nav_transactions").performClick()
+        composeRule.onNodeWithTag("transaction_search").performTextInput("LUNCH")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.type_expense)).performClick()
+        composeRule.onNodeWithTag("open_transaction_filters").performClick()
+        composeRule.onNodeWithTag("filter_category").performClick()
+        composeRule.onNodeWithText("Food").performClick()
+        composeRule.onNodeWithTag("cancel_transaction_filters").performScrollTo().performClick()
+        assertNull(transactions.uiState.value.selectedCategory)
+        composeRule.onNodeWithTag("open_transaction_filters").performClick()
+        composeRule.onNodeWithTag("filter_category").performClick()
+        composeRule.onNodeWithText("Food").performClick()
+        composeRule.onNodeWithTag("apply_transaction_filters").performScrollTo().performClick()
+        assertEquals("Food", transactions.uiState.value.selectedCategory)
+        composeRule.runOnIdle { transactions.applyFilters("Food", TransactionDateRange(first, last)) }
+        composeRule.onNodeWithTag("transaction_row_${ids[0]}").assertExists()
+        composeRule.onNodeWithTag("transaction_row_${ids[1]}").assertExists()
+        composeRule.onNodeWithTag("transaction_row_${ids[2]}").assertDoesNotExist()
+        composeRule.onNodeWithTag("transaction_row_${ids[3]}").assertDoesNotExist()
+        val added = runBlocking {
+            repository.add(TransactionDraft(TransactionType.EXPENSE, 100, "Food", last, "Lunch"))
+        }
+        composeRule.waitUntil(5_000) { transactions.uiState.value.visibleTransactions.size == 3 }
+        runBlocking {
+            val record = repository.observeTransactions().first().first { it.id == added }
+            repository.update(record.copy(category = "Travel"))
+            repository.delete(ids[0])
+            repository.delete(ids[1])
+        }
+        composeRule.waitUntil(5_000) { transactions.uiState.value.visibleTransactions.isEmpty() }
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.no_matches_title)).assertIsDisplayed()
+        composeRule.onNodeWithTag("active_filter_category").assertExists()
+        composeRule.onNodeWithTag("empty_reset_filters").performClick()
+        assertFalse(transactions.uiState.value.hasActiveFilters)
+        assertEquals(YearMonth.now(), transactions.uiState.value.selectedMonth)
+        composeRule.onNodeWithTag("transaction_row_$added").assertExists()
+        assertEquals(3, runBlocking { repository.observeTransactions().first().size })
     }
 
     @Test
@@ -324,6 +383,7 @@ class HomeFlowTest {
                 transactions.setQuery("no match")
                 transactions.setFilter(TransactionFilter.INCOME)
                 transactions.selectMonth(month.minusMonths(2))
+                transactions.applyFilters("Custom", TransactionDateRange(month.atDay(1), month.atDay(2)))
             }
             // List filters do not affect the Home snapshot.
             assertEquals(100L, home.uiState.value.summary?.expenseVnd)
@@ -332,6 +392,8 @@ class HomeFlowTest {
             assertEquals(month, transactions.uiState.value.selectedMonth)
             assertEquals("", transactions.uiState.value.query)
             assertEquals(TransactionFilter.ALL, transactions.uiState.value.filter)
+            assertNull(transactions.uiState.value.selectedCategory)
+            assertNull(transactions.uiState.value.dateRange)
             Espresso.pressBack()
             composeRule.onNodeWithTag("home_greeting").assertExists()
             composeRule.onNodeWithTag("transactions_screen").assertDoesNotExist()
