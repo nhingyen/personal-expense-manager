@@ -52,6 +52,9 @@ internal fun TransactionDetailScreen(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onRetry: () -> Unit,
+    walletLabel: String? = null,
+    walletLoadFailed: Boolean = false,
+    onRetryWallets: () -> Unit = {},
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val record = state.selectedRecord
@@ -93,6 +96,10 @@ internal fun TransactionDetailScreen(
                         DetailField(stringResource(R.string.transaction_category), record.category)
                         HorizontalDivider(color = ExpenseManagerColors.outline)
                         DetailField(stringResource(R.string.transaction_date), formatDate(record.date, locale))
+                        walletLabel?.let {
+                            HorizontalDivider(color = ExpenseManagerColors.outline)
+                            DetailField(stringResource(R.string.wallet_label), it)
+                        }
                     }
                 }
                 if (!record.note.isNullOrBlank()) {
@@ -105,6 +112,7 @@ internal fun TransactionDetailScreen(
                         }
                     }
                 }
+                if (walletLoadFailed) ErrorBanner(stringResource(R.string.wallet_read_error), onRetryWallets)
                 if (state.loadStatus == LoadStatus.ERROR) ErrorBanner(stringResource(R.string.load_transactions_error), onRetry)
                 when (state.actionError) {
                     ActionError.DELETE_FAILED -> ErrorBanner(stringResource(R.string.delete_failed), { confirmDelete = true })
@@ -161,6 +169,6 @@ private fun DetailField(label: String, value: String) {
     Row(Modifier.fillMaxWidth().heightIn(min = 54.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
             color = ExpenseManagerColors.textSecondary)
-        Text(value, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End)
+        Text(value, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End)
     }
 }

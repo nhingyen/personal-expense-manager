@@ -23,6 +23,7 @@ data class TransactionFormState(
     val category: String = "",
     val date: LocalDate = LocalDate.now(),
     val note: String = "",
+    val walletId: Long = com.ngyennhi.expensemanager.domain.model.DEFAULT_WALLET_ID,
     val amountError: FieldError? = null,
     val categoryError: FieldError? = null,
     val isSaving: Boolean = false,

@@ -62,6 +62,26 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun walletSelectionPersistsAcrossAddEditAndReassignment() = runTest {
+        runCurrent()
+        viewModel.startAdd(2)
+        viewModel.setAmount("100")
+        viewModel.setCategory("Food")
+        viewModel.save()
+        runCurrent()
+        val saved = viewModel.uiState.value.transactions.single()
+        assertEquals(2L, saved.walletId)
+        viewModel.startEdit(saved.id)
+        assertEquals(2L, viewModel.uiState.value.form.walletId)
+        viewModel.setWallet(3)
+        viewModel.save()
+        runCurrent()
+        assertEquals(3L, viewModel.uiState.value.transactions.single().walletId)
+        viewModel.startAdd()
+        assertEquals(1L, viewModel.uiState.value.form.walletId)
+    }
+
+    @Test
     fun firstObservationSeparatesLoadingFromEmptyAndRetryRecovers() = runTest {
         repository.observationGate = CompletableDeferred()
         viewModel = newViewModel()
@@ -298,7 +318,7 @@ class TransactionViewModelTest {
             if (failWrite) throw IllegalStateException("Write failed")
             val id = (records.value.maxOfOrNull { it.id } ?: 0) + 1
             records.value = listOf(Transaction(id, transaction.type, transaction.amountVnd,
-                transaction.category, transaction.date, transaction.note)) + records.value
+                transaction.category, transaction.date, transaction.note, transaction.walletId)) + records.value
             return id
         }
 

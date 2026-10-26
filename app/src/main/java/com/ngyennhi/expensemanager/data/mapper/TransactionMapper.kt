@@ -13,6 +13,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     category = category,
     date = LocalDate.ofEpochDay(dateEpochDay),
     note = note,
+    walletId = walletId,
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -22,6 +23,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     category = category,
     dateEpochDay = date.toEpochDay(),
     note = note,
+    walletId = walletId,
 )
 
 fun TransactionDraft.toEntity(): TransactionEntity = TransactionEntity(
@@ -30,4 +32,5 @@ fun TransactionDraft.toEntity(): TransactionEntity = TransactionEntity(
     category = category,
     dateEpochDay = date.toEpochDay(),
     note = note,
+    walletId = walletId,
 )

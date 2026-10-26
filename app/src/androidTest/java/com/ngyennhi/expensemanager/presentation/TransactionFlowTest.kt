@@ -71,7 +71,7 @@ class TransactionFlowTest {
         assertEquals("85000", viewModel.uiState.value.form.amountInput)
         assertEquals("Food", viewModel.uiState.value.form.category)
         Espresso.closeSoftKeyboard()
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         composeRule.waitForIdle()
         assertEquals(null, viewModel.uiState.value.form.amountError)
         assertEquals(null, viewModel.uiState.value.form.categoryError)
@@ -87,11 +87,11 @@ class TransactionFlowTest {
             composeRule.onAllNodesWithTag("transaction_row_$id").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithTag("transaction_row_$id").performClick()
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("amount_input").performTextClearance()
         composeRule.onNodeWithTag("amount_input").performTextInput("90000")
         Espresso.closeSoftKeyboard()
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         composeRule.waitUntil(5_000) {
             runBlocking { database.transactionDao().observeAll().first().single().amountVnd == 90_000L }
         }
@@ -101,10 +101,10 @@ class TransactionFlowTest {
             composeRule.onAllNodesWithTag("transaction_row_$id").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithTag("transaction_row_$id").performClick()
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithText(activity.getString(R.string.cancel)).performClick()
         assertEquals(1, runBlocking { database.transactionDao().observeAll().first().size })
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("confirm_delete_button").performClick()
         composeRule.waitUntil(5_000) { runBlocking { database.transactionDao().observeAll().first().isEmpty() } }
         composeRule.onNodeWithText(activity.getString(R.string.empty_transactions_title)).assertExists()
@@ -120,7 +120,7 @@ class TransactionFlowTest {
         Espresso.closeSoftKeyboard()
         composeRule.onNodeWithTag("choose_category_button").performClick()
         composeRule.onNodeWithText(activity.getString(R.string.category_salary)).performClick()
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         composeRule.waitUntil(5_000) {
             runBlocking { database.transactionDao().observeAll().first().size == 1 }
         }
@@ -136,7 +136,7 @@ class TransactionFlowTest {
         @Provides
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context): ExpenseManagerDatabase =
-            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
 
         @Provides
         fun provideDao(database: ExpenseManagerDatabase): TransactionDao = database.transactionDao()

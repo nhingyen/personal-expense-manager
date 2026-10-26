@@ -2,6 +2,14 @@
 
 The [Figma file](https://www.figma.com/design/Ej8vNW8NfvMc3XFw3WfQ6V/personal-expense-manager?node-id=0-1) contains nine Vietnamese Android screens, each 393 × 852 px. Measurements below are observed layer values, not named Figma variables or invented design tokens. The file shows populated, light appearance screens only. **TBD: final product name**; the mockups say PocketBalance, while the repository says Personal Expense Manager.
 
+## TASK-009 Wallet Management (2026-10-26)
+
+Wallets `14:189` and Add transaction `3:9803` were read through Figma MCP design context with screenshots. The wallet list reuses the 64 dp shared top bar, 20 dp horizontal margins, 8 dp top inset, 10 dp section gaps, pastel-purple total card (20 dp radius, 16 dp padding, 36 sp amount), white wallet cards (88 dp minimum height, 20 dp radius, 16/12 dp padding), 44 dp icon surfaces with 22 dp glyphs, 18 sp balances and the 50 dp minimum pill Add button. Cards grow for long names/amounts or larger text. Cash uses purple; bank uses the existing blue surface; e-wallet extends the design with the shared green surface and wallet glyph. The original wallet, bank, purple Add and form-wallet SVGs were downloaded and converted through Android Svg2Vector into local drawables; runtime has no asset URLs.
+
+The transfer action is omitted by task scope. Secondary wallet routes hide the bottom bar, retaining the existing navigation policy. The list shows five recent transactions; wallet detail shows all transactions for that wallet with real category/date/amount and Add. The list additionally identifies each recent record's saved wallet. Unillustrated create/edit/detail screens compose existing Material 3 fields, chips, cards, dialogs and transaction rows. Type choices stack vertically for VI/EN and large fonts; opening balance accepts signed integer text. The transaction form replaces the reference's static account line with a working 56 dp wallet selector, using its original 18 dp wallet icon and the existing chevron. Details show the saved wallet.
+
+The default wallet has a localized label until renamed and cannot be deleted. Other wallets show a disabled Delete control with an explanation when transactions exist; empty-wallet deletion requires confirmation. Loading, no wallets/no transactions, missing-wallet, read/write/overflow and field-validation states use VI/EN resources. Exact financial values wrap instead of being shortened. Existing system/IME insets and 48 dp controls remain. Verification and screenshots are recorded in [TASK-009](../tasks/TASK-009.md). Earlier statements deferring Wallet and the form's account field are superseded by this task; transfers and other Settings features remain deferred.
+
 ## Screens
 
 English names below are proposed translations; Figma has no English frames.

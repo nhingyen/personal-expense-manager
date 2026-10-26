@@ -27,7 +27,9 @@ object TransactionDatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ExpenseManagerDatabase =
-        Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, "expense_manager.db").build()
+        Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, "expense_manager.db")
+            .addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET)
+            .addMigrations(ExpenseManagerDatabase.MIGRATION_1_2).build()
 
     @Provides
     fun provideTransactionDao(database: ExpenseManagerDatabase): TransactionDao =

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 class AddTransactionUseCase(private val repository: TransactionRepository) {
     suspend operator fun invoke(transaction: TransactionDraft): Long {
         validateTransaction(transaction.amountVnd, transaction.category)
+        require(transaction.walletId > 0) { "Wallet must exist" }
         return repository.add(transaction)
     }
 }
@@ -15,6 +16,7 @@ class AddTransactionUseCase(private val repository: TransactionRepository) {
 class UpdateTransactionUseCase(private val repository: TransactionRepository) {
     suspend operator fun invoke(transaction: Transaction): Boolean {
         validateTransaction(transaction.amountVnd, transaction.category)
+        require(transaction.walletId > 0) { "Wallet must exist" }
         return repository.update(transaction)
     }
 }
