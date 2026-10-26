@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -295,6 +296,54 @@ class HomeFlowTest {
         composeRule.waitUntil(5_000) { home.uiState.value.budgetLimitVnd == null && !home.uiState.value.isSavingBudget }
         composeRule.onNodeWithTag("home_budget_progress").assertDoesNotExist()
         assertNull(home.uiState.value.budget)
+        assertEquals(id, runBlocking { repository.observeTransactions().first().single().id })
+    }
+
+    @Test
+    fun budgetSheetSelectsMonthEditsAndCancelsWithoutMixingLimits() {
+        val initialMonth = home.uiState.value.selectedMonth
+        val id = seed()
+        composeRule.onNodeWithTag("home_budget_shortcut").performScrollTo().performClick()
+        composeRule.onNodeWithTag("budget_overview_progress").assertDoesNotExist()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("100")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.limitReached == true && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("budget_warning").assertTextEquals(composeRule.activity.getString(R.string.home_budget_reached))
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("999")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("month_next").performScrollTo().performClick()
+        assertEquals(initialMonth.plusMonths(1), home.uiState.value.selectedMonth)
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.budget_no_expenses)).assertExists()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("300")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.remainingVnd == 300L && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("month_previous").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("100")))
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("200")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.remainingVnd == 100L && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("500")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.cancel)).performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("200")))
+        Espresso.pressBack()
+        composeRule.activityRule.scenario.recreate(); awaitReady()
+        assertEquals(initialMonth, home.uiState.value.selectedMonth)
+        assertEquals(200L, home.uiState.value.budgetLimitVnd)
         assertEquals(id, runBlocking { repository.observeTransactions().first().single().id })
     }
 

@@ -108,6 +108,9 @@
     <string name="home_budget_remaining">Còn %1$s để chi tiêu trong tháng</string>
     <string name="home_notifications">Thông báo</string>
     <string name="home_budget_limit">Hạn mức chi tiêu tháng</string>
+    <string name="budget_spent">Đã chi tiêu</string>
+    <string name="budget_remaining">Còn lại</string>
+    <string name="budget_no_expenses">Chưa có chi tiêu trong tháng này.</string>
     <string name="home_budget_save_error">Không lưu được ngân sách. Hạn mức đã nhập vẫn được giữ lại.</string>
     <string name="home_save_budget">Lưu ngân sách</string>
     <string name="home_clear_budget">Xóa hạn mức tháng này</string>

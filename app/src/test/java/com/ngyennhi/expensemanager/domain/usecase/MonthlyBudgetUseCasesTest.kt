@@ -1,6 +1,8 @@
 package com.ngyennhi.expensemanager.domain.usecase
 
 import com.ngyennhi.expensemanager.domain.model.MonthlySummary
+import com.ngyennhi.expensemanager.domain.model.Transaction
+import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.repository.MonthlyBudgetRepository
 import java.math.BigInteger
 import java.time.YearMonth
@@ -36,6 +38,33 @@ class MonthlyBudgetUseCasesTest {
         assertEquals(1 - Long.MAX_VALUE, result.remainingVnd)
     }
     @Test(expected = IllegalArgumentException::class) fun zeroLimitIsRejected() { calculate(summary(0), 0) }
+    @Test fun spendingUsesOnlySelectedMonthExpensesAcrossYearBoundary() {
+        val selected = YearMonth.of(2027, 1)
+        val records = listOf(
+            Transaction(1, TransactionType.EXPENSE, 500, "Food", selected.minusMonths(1).atEndOfMonth(), null),
+            Transaction(2, TransactionType.INCOME, 900, "Salary", selected.atDay(1), null),
+            Transaction(3, TransactionType.EXPENSE, 50, "Food", selected.atDay(1), null),
+            Transaction(4, TransactionType.EXPENSE, 75, "Food", selected.atEndOfMonth(), null),
+            Transaction(5, TransactionType.EXPENSE, 500, "Food", selected.plusMonths(1).atDay(1), null),
+        )
+        val result = calculate(CalculateMonthlySummaryUseCase()(records, selected), 100)!!
+        assertEquals(selected, result.month)
+        assertEquals(125L, result.spentVnd)
+        assertEquals(-25L, result.remainingVnd)
+        assertEquals(BigInteger.valueOf(125), result.usedPercent)
+        assertTrue(result.limitReached)
+    }
+
+    @Test fun largestLimitHasExactRemainingAndReachedBoundary() {
+        val below = calculate(summary(Long.MAX_VALUE - 1), Long.MAX_VALUE)!!
+        assertEquals(1L, below.remainingVnd)
+        assertEquals(BigInteger.valueOf(99), below.usedPercent)
+        assertFalse(below.limitReached)
+        val reached = calculate(summary(Long.MAX_VALUE), Long.MAX_VALUE)!!
+        assertEquals(0L, reached.remainingVnd)
+        assertEquals(BigInteger.valueOf(100), reached.usedPercent)
+        assertTrue(reached.limitReached)
+    }
     @Test fun saveValidatesLimitsAndSeparatesMonthsAndClearing() = runTest {
         val repository = object : MonthlyBudgetRepository {
             val limits = MutableStateFlow<Map<YearMonth, Long>>(emptyMap())

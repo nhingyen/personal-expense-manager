@@ -207,6 +207,7 @@ fun HomeScreen(
         )
     }
     panel?.let {
-        HomePanelSheet(it, state, locale, homeActions, onRetry, onDismiss = { panel = null })
+        HomePanelSheet(it, state, locale, homeActions, onRetry,
+            onPreviousMonth = onPreviousMonth, onNextMonth = onNextMonth, onDismiss = { panel = null })
     }
 }
