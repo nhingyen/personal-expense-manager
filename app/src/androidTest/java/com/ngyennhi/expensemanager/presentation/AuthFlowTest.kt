@@ -112,6 +112,27 @@ class AuthFlowTest {
         compose.onNodeWithText("a@example.com").assertIsDisplayed()
     }
 
+    @Test fun googleSessionAndLogoutKeepLocalFinancialDataAvailableToGuest() {
+        val month = YearMonth.now()
+        runBlocking {
+            val bank = wallets.add(WalletDraft("Google flow wallet", WalletType.BANK, 1000000))
+            transactions.add(TransactionDraft(TransactionType.EXPENSE, 85000, "Food", LocalDate.now(), "Local record", bank))
+            budgets.setLimit(month, 500000)
+        }
+        val records = runBlocking { transactions.observeTransactions().first() }
+        val savedWallets = runBlocking { wallets.observeWallets().first() }
+        val savedBudgets = runBlocking { budgets.observeLimits().first() }
+        val walletVm = ViewModelProvider(compose.activity)[WalletViewModel::class.java]
+        compose.waitUntil(5_000) { walletVm.uiState.value.status == LoadStatus.READY && walletVm.uiState.value.transactions.size == 1 }
+        val balances = walletVm.uiState.value.balances
+        runBlocking { vm.loginWithGoogle { "fake-id-token" } }
+        compose.waitUntil(5_000) { vm.uiState.value.user?.email == "google@example.com" }
+        assertData(records, savedWallets, savedBudgets, balances, walletVm)
+        compose.runOnUiThread { vm.logout() }
+        compose.waitUntil(5_000) { vm.uiState.value.user == null && !vm.uiState.value.isSubmitting }
+        assertData(records, savedWallets, savedBudgets, balances, walletVm)
+    }
+
     private fun openSettings() { compose.onNodeWithTag("nav_settings").performClick() }
 
     private fun login(email: String, registering: Boolean) {
@@ -151,6 +172,10 @@ class AuthFlowTest {
             user.value = AuthUser(email, email)
         }
         override suspend fun register(email: String, password: String) = login(email, password)
+        override suspend fun loginWithGoogle(idToken: String) {
+            failure?.let { throw AuthFailure(it) }
+            user.value = AuthUser("google", "google@example.com")
+        }
         override suspend fun logout() { user.value = null }
     }
 

@@ -4,7 +4,7 @@ data class AuthUser(val id: String, val email: String?)
 
 enum class AuthError {
     INVALID_CREDENTIALS, EMAIL_IN_USE, WEAK_PASSWORD, NETWORK, TOO_MANY_REQUESTS,
-    USER_DISABLED, NOT_CONFIGURED, UNKNOWN,
+    USER_DISABLED, NOT_CONFIGURED, PROVIDER_CONFLICT, GOOGLE_UNAVAILABLE, GOOGLE_FAILED, UNKNOWN,
 }
 
 // Never retain SDK exceptions, backend messages or credentials in public errors.

@@ -4,6 +4,7 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.ngyennhi.expensemanager.domain.model.AuthError
 import com.ngyennhi.expensemanager.domain.model.AuthFailure
 import com.ngyennhi.expensemanager.domain.model.AuthUser
@@ -21,6 +22,7 @@ internal interface AuthClient {
     fun removeListener(listener: () -> Unit)
     suspend fun login(email: String, password: String)
     suspend fun register(email: String, password: String)
+    suspend fun loginWithGoogle(idToken: String)
     fun logout()
 }
 
@@ -47,10 +49,18 @@ internal class FirebaseAuthClient(private val auth: FirebaseAuth) : AuthClient {
         auth.createUserWithEmailAndPassword(email, password).await()
     }
 
+    override suspend fun loginWithGoogle(idToken: String) {
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
+    }
+
     override fun logout() = auth.signOut()
 }
 
-internal class FirebaseAuthRepository(private val client: AuthClient) : AuthRepository {
+internal class FirebaseAuthRepository(
+    private val client: AuthClient,
+    private val separateGoogleAccountsConfirmed: Boolean = false,
+    private val clearCredentialState: suspend () -> Unit = {},
+) : AuthRepository {
     override fun observeUser() = callbackFlow {
         val listener: () -> Unit = { trySend(client.currentUser); Unit }
         try {
@@ -66,7 +76,21 @@ internal class FirebaseAuthRepository(private val client: AuthClient) : AuthRepo
 
     override suspend fun login(email: String, password: String) = request { client.login(email, password) }
     override suspend fun register(email: String, password: String) = request { client.register(email, password) }
-    override suspend fun logout() = request { client.logout() }
+    override suspend fun loginWithGoogle(idToken: String) = request {
+        // Do not rely on fetchSignInMethodsForEmail: enumeration protection hides providers,
+        // and the default Firebase policy can automatically replace an untrusted provider.
+        if (!separateGoogleAccountsConfirmed) throw AuthFailure(AuthError.NOT_CONFIGURED)
+        if (client.currentUser != null) throw AuthFailure(AuthError.PROVIDER_CONFLICT)
+        if (idToken.isBlank()) throw AuthFailure(AuthError.INVALID_CREDENTIALS)
+        client.loginWithGoogle(idToken)
+    }
+
+    override suspend fun logout() = request {
+        client.logout()
+        try { clearCredentialState()
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (_: Exception) { /* Local sign-out must still leave the app in Guest Mode. */ }
+    }
 
     private suspend fun request(action: suspend () -> Unit) {
         try { action()
@@ -87,6 +111,8 @@ internal fun firebaseAuthError(code: String): AuthError = when (code) {
     "ERROR_INVALID_EMAIL", "ERROR_WRONG_PASSWORD", "ERROR_USER_NOT_FOUND",
     "ERROR_INVALID_CREDENTIAL", "ERROR_INVALID_LOGIN_CREDENTIALS" -> AuthError.INVALID_CREDENTIALS
     "ERROR_EMAIL_ALREADY_IN_USE" -> AuthError.EMAIL_IN_USE
+    "ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL", "ERROR_CREDENTIAL_ALREADY_IN_USE",
+    "ERROR_PROVIDER_ALREADY_LINKED" -> AuthError.PROVIDER_CONFLICT
     "ERROR_WEAK_PASSWORD", "ERROR_PASSWORD_DOES_NOT_MEET_REQUIREMENTS" -> AuthError.WEAK_PASSWORD
     "ERROR_NETWORK_REQUEST_FAILED" -> AuthError.NETWORK
     "ERROR_TOO_MANY_REQUESTS" -> AuthError.TOO_MANY_REQUESTS

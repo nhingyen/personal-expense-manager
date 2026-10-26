@@ -94,6 +94,18 @@ class AuthViewModel @Inject constructor(
         if (uiState.value.user != null) request { repository.logout() }
     }
 
+    // The Activity owns the credential picker coroutine and cancels it on destruction.
+    // Only the existing request state and repository handle the result; no token is retained.
+    suspend fun loginWithGoogle(getIdToken: suspend () -> String?) {
+        val state = uiState.value
+        if (!state.isInitialized || state.sessionError || state.user != null || !beginRequest()) return
+        mutableState.update { it.copy(validation = AuthValidation()) }
+        executeRequest {
+            val token = getIdToken() ?: return@executeRequest // User dismissed the picker.
+            repository.loginWithGoogle(token)
+        }
+    }
+
     fun dismissForm() {
         if (!uiState.value.isSubmitting) mutableState.update {
             it.copy(email = "", registering = false, validation = AuthValidation(), error = null)
@@ -101,16 +113,23 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun request(action: suspend () -> Unit) {
-        if (uiState.value.isSubmitting) return
+        if (!beginRequest()) return
+        viewModelScope.launch { executeRequest(action) }
+    }
+
+    private fun beginRequest(): Boolean {
+        if (uiState.value.isSubmitting) return false
         mutableState.update { it.copy(isSubmitting = true, error = null) }
-        viewModelScope.launch {
-            try { action()
-            } catch (cancelled: CancellationException) { throw cancelled
-            } catch (failure: AuthFailure) {
-                mutableState.update { it.copy(error = failure.reason) }
-            } catch (_: Exception) {
-                mutableState.update { it.copy(error = AuthError.UNKNOWN) }
-            } finally { mutableState.update { it.copy(isSubmitting = false) } }
-        }
+        return true
+    }
+
+    private suspend fun executeRequest(action: suspend () -> Unit) {
+        try { action()
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (failure: AuthFailure) {
+            mutableState.update { it.copy(error = failure.reason) }
+        } catch (_: Exception) {
+            mutableState.update { it.copy(error = AuthError.UNKNOWN) }
+        } finally { mutableState.update { it.copy(isSubmitting = false) } }
     }
 }

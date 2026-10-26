@@ -65,9 +65,33 @@ class AuthScreenTest {
             }
         }
         compose.onNodeWithTag("auth_loading").performScrollTo().assertIsDisplayed()
-        listOf("auth_email", "auth_password", "auth_submit", "auth_switch_mode", "auth_guest").forEach {
+        listOf("auth_email", "auth_password", "auth_submit", "auth_google", "auth_switch_mode", "auth_guest").forEach {
             compose.onNodeWithTag(it).performScrollTo().assertIsNotEnabled()
         }
+    }
+
+    @Test fun vietnameseGoogleActionAppearsOnlyOnLogin() = googleActionIsLocalizedAndAvailableOnlyOnLogin("vi")
+    @Test fun englishGoogleActionAppearsOnlyOnLogin() = googleActionIsLocalizedAndAvailableOnlyOnLogin("en")
+
+    private fun googleActionIsLocalizedAndAvailableOnlyOnLogin(language: String) {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val config = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }
+        val localized = base.createConfigurationContext(config)
+        var state by mutableStateOf(AuthUiState(isInitialized = true))
+        var googleClicks = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalContext provides localized, LocalConfiguration provides config) {
+                PersonalExpenseManagerTheme {
+                    AuthScreen(state, AuthActions(onGoogle = { googleClicks++ },
+                        onRegistering = { state = state.copy(registering = it) }), {})
+                }
+            }
+        }
+        compose.onNodeWithTag("auth_google").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithText(localized.getString(R.string.auth_continue_google)).assertExists()
+        assertEquals(1, googleClicks)
+        compose.onNodeWithTag("auth_switch_mode").performScrollTo().performClick()
+        compose.onNodeWithTag("auth_google").assertDoesNotExist()
     }
 
     @Test fun passwordsClearWhenSwitchingModeAndLeavingTheForm() {

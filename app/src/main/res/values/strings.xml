@@ -183,6 +183,10 @@
     <string name="auth_password">Mật khẩu</string>
     <string name="auth_confirm_password">Xác nhận mật khẩu</string>
     <string name="auth_continue_guest">Tiếp tục dùng với tư cách khách</string>
+    <string name="auth_continue_google">Tiếp tục với Google</string>
+    <string name="auth_provider_conflict">Email này đang dùng phương thức đăng nhập khác. Hãy đăng nhập bằng phương thức ban đầu; tài khoản sẽ không tự liên kết.</string>
+    <string name="auth_google_unavailable">Chưa có tài khoản Google khả dụng trên thiết bị. Hãy thêm tài khoản rồi thử lại.</string>
+    <string name="auth_google_failed">Không thể đăng nhập bằng Google. Kiểm tra kết nối và thử lại.</string>
     <string name="auth_welcome_login">Chào mừng trở lại</string>
     <string name="auth_welcome_register">Tạo tài khoản của bạn</string>
     <string name="auth_password_hint">Ít nhất 6 ký tự</string>

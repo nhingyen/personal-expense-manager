@@ -6,7 +6,7 @@ Add optional Firebase Email/Password login and registration, persisted Firebase 
 
 Room wallets/transactions and local budgets/settings remain device-wide. Authentication never merges, deletes, migrates, filters or synchronizes them by account. Both Settings and authentication explain that financial data is local and is not protected separately for each account. Guest Mode is local usage, not Firebase anonymous authentication.
 
-No Firestore, Cloud Sync, Google Sign-In, password reset, account deletion or other new features.
+Google Sign-In extends this task through [TASK-012](TASK-012.md), using the same auth state and navigation. Firestore, Cloud Sync, password reset, account deletion and other new features remain outside scope.
 
 ## Acceptance criteria
 
@@ -59,3 +59,7 @@ At the user's request, refine Login/Register using the existing Home/Add Figma l
 - GitHub Actions itself was not triggered because no push/PR was requested. Its build/config path was verified locally as described above.
 
 References: [Firebase Android releases](https://firebase.google.com/support/release-notes/android), [Email/Password setup](https://firebase.google.com/docs/auth/android/password-auth), [AGP 9.4 compatibility](https://developer.android.com/build/releases/agp-9-4-0-release-notes).
+
+### TASK-012 extension
+
+Google Sign-In acceptance criteria, Firebase Console prerequisites, tests and final verification are tracked in [TASK-012](TASK-012.md). The earlier verification records above apply to the Email/Password implementation before this extension.

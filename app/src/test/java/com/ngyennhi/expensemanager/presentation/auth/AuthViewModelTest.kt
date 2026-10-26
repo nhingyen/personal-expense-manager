@@ -128,6 +128,43 @@ class AuthViewModelTest {
         assertNull(vm.uiState.value.error)
     }
 
+    @Test fun googleSuccessUsesExistingSessionAndBlocksDuplicateRequests() = runTest(dispatcher) {
+        val vm = create(); runCurrent()
+        val picker = CompletableDeferred<String?>()
+        val first = launch { vm.loginWithGoogle { picker.await() } }
+        runCurrent()
+        assertTrue(vm.uiState.value.isSubmitting)
+        vm.submit("secret", "")
+        vm.setRegistering(true)
+        val duplicate = launch { vm.loginWithGoogle { "second-token" } }
+        runCurrent()
+        assertFalse(vm.uiState.value.registering)
+        assertEquals(0, repository.writes)
+        picker.complete("request-token")
+        first.join(); duplicate.join(); runCurrent()
+        assertEquals(1, repository.writes)
+        assertEquals("request-token", repository.lastGoogleToken)
+        assertEquals("google@example.com", vm.uiState.value.user?.email)
+        assertFalse(vm.uiState.value.isSubmitting)
+    }
+
+    @Test fun googleCancellationAndNetworkFailureReturnToRetryableGuestState() = runTest(dispatcher) {
+        val vm = create(); runCurrent()
+        vm.loginWithGoogle { null }
+        assertNull(vm.uiState.value.error)
+        assertNull(vm.uiState.value.user)
+        assertFalse(vm.uiState.value.isSubmitting)
+        assertEquals(0, repository.writes)
+        repository.failure = AuthFailure(AuthError.NETWORK)
+        vm.loginWithGoogle { "first-token" }
+        assertEquals(AuthError.NETWORK, vm.uiState.value.error)
+        assertNull(vm.uiState.value.user)
+        repository.failure = null
+        vm.loginWithGoogle { "retry-token" }; runCurrent()
+        assertEquals("google@example.com", vm.uiState.value.user?.email)
+        assertNull(vm.uiState.value.error)
+    }
+
     private class FakeAuth : AuthRepository {
         val user = MutableStateFlow<AuthUser?>(null)
         var failObservation = false
@@ -138,6 +175,7 @@ class AuthViewModelTest {
         var registrations = 0
         var lastEmail: String? = null
         var lastPassword: String? = null
+        var lastGoogleToken: String? = null
         override fun observeUser() = flow {
             if (failObservation) throw IllegalStateException()
             activeObservers++
@@ -148,6 +186,9 @@ class AuthViewModelTest {
             user.value = AuthUser(email, email)
         }
         override suspend fun register(email: String, password: String) { registrations++; login(email, password) }
+        override suspend fun loginWithGoogle(idToken: String) {
+            write(); lastGoogleToken = idToken; user.value = AuthUser("google", "google@example.com")
+        }
         override suspend fun logout() { write(); user.value = null }
         private suspend fun write() { writes++; gate?.await(); failure?.let { throw it } }
     }

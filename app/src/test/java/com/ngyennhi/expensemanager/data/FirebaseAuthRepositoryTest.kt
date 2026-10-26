@@ -86,12 +86,45 @@ class FirebaseAuthRepositoryTest {
         assertTrue(client.listeners.isEmpty())
     }
 
+    @Test fun googleRequiresSeparateAccountPolicyAndCannotReplaceCurrentSession() = runTest {
+        val client = Client()
+        try { FirebaseAuthRepository(client).loginWithGoogle("id-token"); fail()
+        } catch (failure: AuthFailure) { assertEquals(AuthError.NOT_CONFIGURED, failure.reason) }
+        assertEquals(0, client.googleRequests)
+        client.currentUser = AuthUser("password", "same@example.com")
+        try { FirebaseAuthRepository(client, separateGoogleAccountsConfirmed = true).loginWithGoogle("id-token"); fail()
+        } catch (failure: AuthFailure) { assertEquals(AuthError.PROVIDER_CONFLICT, failure.reason) }
+        assertEquals("password", client.currentUser?.id)
+        assertEquals(0, client.googleRequests)
+    }
+
+    @Test fun googleUsesFirebaseListenerAndProviderFailureIsSafe() = runTest {
+        val client = Client()
+        val repository = FirebaseAuthRepository(client, separateGoogleAccountsConfirmed = true)
+        client.failure = AuthFailure(AuthError.PROVIDER_CONFLICT)
+        try { repository.loginWithGoogle("first-token"); fail()
+        } catch (failure: AuthFailure) { assertEquals(AuthError.PROVIDER_CONFLICT, failure.reason) }
+        assertNull(client.currentUser)
+        client.failure = null
+        repository.loginWithGoogle("second-token")
+        assertEquals(2, client.googleRequests)
+        assertEquals("google@example.com", client.currentUser?.email)
+    }
+
+    @Test fun logoutRetainsGuestModeWhenCredentialCleanupFails() = runTest {
+        val client = Client().apply { currentUser = AuthUser("google", "google@example.com") }
+        val repository = FirebaseAuthRepository(client, true, clearCredentialState = { error("provider unavailable") })
+        repository.logout()
+        assertNull(client.currentUser)
+    }
+
     private class Client : AuthClient {
         override var currentUser: AuthUser? = null
         val listeners = mutableSetOf<() -> Unit>()
         var failure: Exception? = null
         var failListener = false
         var removed = 0
+        var googleRequests = 0
         override fun addListener(listener: () -> Unit) {
             listeners += listener
             if (failListener) throw IllegalStateException("backend detail")
@@ -104,6 +137,12 @@ class FirebaseAuthRepositoryTest {
             listeners.toList().forEach { it() }
         }
         override suspend fun register(email: String, password: String) = login(email, password)
+        override suspend fun loginWithGoogle(idToken: String) {
+            googleRequests++
+            failure?.let { throw it }
+            currentUser = AuthUser("google", "google@example.com")
+            listeners.toList().forEach { it() }
+        }
         override fun logout() {
             failure?.let { throw it }
             currentUser = null

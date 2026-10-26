@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.AuthError
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
@@ -35,6 +36,7 @@ class AuthActions(
     val onRegistering: (Boolean) -> Unit = {},
     val onPasswordChanged: () -> Unit = {},
     val onSubmit: (String, String) -> Unit = { _, _ -> },
+    val onGoogle: () -> Unit = {},
     val onLogout: () -> Unit = {},
     val onRetrySession: () -> Unit = {},
     val onDismiss: () -> Unit = {},
@@ -108,6 +110,19 @@ internal fun AuthScreen(state: AuthUiState, actions: AuthActions, onBack: () -> 
             ) {
                 Text(stringResource(if (state.registering) R.string.auth_register else R.string.auth_login),
                     style = MaterialTheme.typography.labelLarge)
+            }
+            if (!state.registering) {
+                OutlinedButton(
+                    onClick = { password = ""; confirmation = ""; actions.onGoogle() },
+                    enabled = enabled, shape = RoundedCornerShape(100.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp).testTag("auth_google"),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = ExpenseManagerColors.surface),
+                ) {
+                    Image(painterResource(R.drawable.google_g), null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.auth_continue_google), style = MaterialTheme.typography.labelLarge,
+                        color = ExpenseManagerColors.textPrimary)
+                }
             }
             OutlinedButton(
                 onClick = onBack, enabled = !state.isSubmitting, shape = RoundedCornerShape(100.dp),
@@ -231,5 +246,8 @@ internal fun authErrorMessage(error: AuthError): Int = when (error) {
     AuthError.TOO_MANY_REQUESTS -> R.string.auth_too_many_requests
     AuthError.USER_DISABLED -> R.string.auth_user_disabled
     AuthError.NOT_CONFIGURED -> R.string.auth_not_configured
+    AuthError.PROVIDER_CONFLICT -> R.string.auth_provider_conflict
+    AuthError.GOOGLE_UNAVAILABLE -> R.string.auth_google_unavailable
+    AuthError.GOOGLE_FAILED -> R.string.auth_google_failed
     AuthError.UNKNOWN -> R.string.auth_unknown_error
 }
