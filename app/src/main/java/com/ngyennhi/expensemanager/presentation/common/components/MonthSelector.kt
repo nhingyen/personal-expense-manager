@@ -1,5 +1,8 @@
 package com.ngyennhi.expensemanager.presentation.common.components
 
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
+import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -27,16 +30,16 @@ internal fun MonthSelector(label: String, onPreviousMonth: () -> Unit, onNextMon
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         IconButton(onClick = onPreviousMonth, enabled = enabled, modifier = Modifier.size(48.dp).testTag("month_previous")) {
-            Image(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.previous_month), Modifier.size(20.dp))
+            Image(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.previous_month), Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
         }
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-            Image(painterResource(R.drawable.ic_month_calendar), null, Modifier.size(18.dp))
+            Image(painterResource(R.drawable.ic_month_calendar), null, Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
             Text(label, modifier = Modifier.weight(1f, fill = false), style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.Center)
         }
         IconButton(onClick = onNextMonth, enabled = enabled, modifier = Modifier.size(48.dp).testTag("month_next")) {
-            Image(painterResource(R.drawable.ic_chevron_right), stringResource(R.string.next_month), Modifier.size(20.dp))
+            Image(painterResource(R.drawable.ic_chevron_right), stringResource(R.string.next_month), Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
         }
     }
 }

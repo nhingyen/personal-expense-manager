@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.time.LocalDateTime
@@ -80,7 +81,7 @@ private fun HomeShortcut(label: String, icon: Int, color: Color, onClick: () -> 
         Row(Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(icon), null, Modifier.size(20.dp))
+            Image(painterResource(icon), null, Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
             Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }

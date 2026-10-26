@@ -81,7 +81,7 @@ internal fun AppBottomBar(selected: AppDestination, onSelect: (AppDestination) -
                             ) {
                                 Icon(painterResource(destination.icon), null,
                                     Modifier.size(22.dp).testTag("nav_icon_${destination.route}"),
-                                    tint = if (isAdd) ExpenseManagerColors.surface else color)
+                                    tint = if (isAdd) MaterialTheme.colorScheme.onPrimary else color)
                             }
                             Text(labels[index], color = color,
                                 style = MaterialTheme.typography.labelSmall,

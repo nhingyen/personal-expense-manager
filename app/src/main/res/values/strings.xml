@@ -159,4 +159,17 @@
     <string name="wallet_selected">Ví: %1$s</string>
     <string name="wallet_choose">Chọn ví</string>
     <string name="wallet_loading">Đang tải ví…</string>
+    <string name="settings_language">Ngôn ngữ</string>
+    <string name="settings_system_default">Theo hệ thống</string>
+    <string name="settings_vietnamese">Tiếng Việt</string>
+    <string name="settings_english">Tiếng Anh</string>
+    <string name="settings_appearance">Giao diện</string>
+    <string name="settings_light">Sáng</string>
+    <string name="settings_dark">Tối</string>
+    <string name="settings_system">Hệ thống</string>
+    <string name="settings_about">Giới thiệu</string>
+    <string name="settings_about_description">Quản lý thu chi, ví và ngân sách cá nhân ngay trên thiết bị. Không cần tài khoản hoặc kết nối mạng.</string>
+    <string name="settings_version">Phiên bản %1$s</string>
+    <string name="settings_read_error">Không thể đọc tùy chọn giao diện. Hãy thử lại.</string>
+    <string name="settings_write_error">Không thể lưu tùy chọn. Hãy chọn lại để thử lần nữa.</string>
 </resources>

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.MonthlySummary
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -105,7 +106,7 @@ internal fun MonthlySummaryCard(summary: MonthlySummary, locale: Locale) {
 private fun SummaryTotal(label: String, amount: String, icon: Int, color: Color, tag: String, modifier: Modifier) {
     Column(modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Image(painterResource(icon), null, Modifier.size(16.dp))
+            Image(painterResource(icon), null, Modifier.size(16.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primaryText))
             Text(label, style = MaterialTheme.typography.bodySmall, color = color)
         }
         Text(amount, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,

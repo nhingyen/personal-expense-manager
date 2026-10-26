@@ -21,6 +21,7 @@ import com.ngyennhi.expensemanager.domain.model.*
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.presentation.transaction.LoadStatus
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionRow
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -59,14 +60,14 @@ internal fun WalletListScreen(state: WalletUiState, onBack: () -> Unit, onAdd: (
                                 Text(walletTypeName(wallet.type), style = MaterialTheme.typography.bodySmall,
                                     color = ExpenseManagerColors.textSecondary)
                             }
-                            Image(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(18.dp))
+                            Image(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                         }
                     }
                 }
                 item {
                     Button(onClick = onAdd, enabled = !state.writing, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                         .testTag("wallet_add_button")) {
-                        Image(painterResource(R.drawable.ic_plus), null, Modifier.size(20.dp))
+                        Image(painterResource(R.drawable.ic_plus), null, Modifier.size(20.dp), colorFilter = appearanceIconFilter(MaterialTheme.colorScheme.onPrimary))
                         Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.wallet_add))
                     }
                 }

@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -45,7 +46,7 @@ internal fun AppTopBar(
         ) {
             if (onBack != null) {
                 IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Image(painterResource(R.drawable.ic_back), stringResource(R.string.back), Modifier.size(22.dp))
+                    Image(painterResource(R.drawable.ic_back), stringResource(R.string.back), Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textPrimary))
                 }
             }
             Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))

@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -78,8 +80,8 @@ internal fun TransactionFormScreen(
 ) {
     val form = state.form
     val locale = LocalConfiguration.current.locales[0]
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showCategories by remember { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showCategories by rememberSaveable { mutableStateOf(false) }
     val vndSuffix = stringResource(R.string.vnd_suffix)
     Scaffold(
         containerColor = ExpenseManagerColors.background,
@@ -154,7 +156,7 @@ internal fun TransactionFormScreen(
                                 IconButton(onClick = { showCategories = true },
                                     modifier = Modifier.testTag("choose_category_button")) {
                                     Image(painterResource(R.drawable.ic_chevron_down),
-                                        stringResource(R.string.choose_category), Modifier.size(20.dp))
+                                        stringResource(R.string.choose_category), Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                                 }
                             },
                             singleLine = true,
@@ -179,18 +181,18 @@ internal fun TransactionFormScreen(
                         color = ExpenseManagerColors.textSecondary)
                     Spacer(Modifier.height(8.dp))
                     Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("date_input").clickable { showDatePicker = true },
                         color = ExpenseManagerColors.surface,
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseManagerColors.outline),
                     ) {
                         Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Image(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(22.dp))
+                            Image(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                             Text(formatDate(form.date, locale), modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.bodyMedium)
                             Image(painterResource(R.drawable.ic_chevron_down), contentDescription = stringResource(R.string.pick_date),
-                                modifier = Modifier.size(18.dp))
+                                modifier = Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                         }
                     }
                 }
@@ -224,7 +226,7 @@ internal fun TransactionFormScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primary),
                 ) {
-                    Image(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(20.dp))
+                    Image(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(MaterialTheme.colorScheme.onPrimary))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(if (form.isSaving) R.string.saving_transaction else R.string.save_transaction))
                 }
