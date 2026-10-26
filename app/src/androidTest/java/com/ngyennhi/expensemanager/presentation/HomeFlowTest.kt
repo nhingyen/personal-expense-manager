@@ -126,7 +126,7 @@ class HomeFlowTest {
             composeRule.onNodeWithTag("nav_statistics").performClick().assertIsSelected()
             composeRule.onNodeWithTag("statistics_screen").assertExists()
             composeRule.onNodeWithTag("nav_settings").performClick().assertIsSelected()
-            composeRule.onNodeWithTag("settings_placeholder").assertExists()
+            composeRule.onNodeWithTag("settings_wallets").assertExists()
             composeRule.onNodeWithTag("nav_home").assertIsNotSelected().performClick().assertIsSelected()
             composeRule.onNodeWithTag("nav_transactions").performClick().performClick()
             composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
@@ -254,10 +254,10 @@ class HomeFlowTest {
         val id = seed()
         openRecent(id)
         composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
         composeRule.runOnIdle { transactions.setAmount("200") }
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         awaitRows(1)
         composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
         Espresso.pressBack()
@@ -368,7 +368,7 @@ class HomeFlowTest {
         composeRule.onNodeWithTag("amount_input").performTextInput("85000")
         composeRule.onNodeWithTag("category_input").performTextInput("Food")
         Espresso.closeSoftKeyboard()
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         awaitRows(1)
         composeRule.onNodeWithTag("transactions_screen").assertExists()
         Espresso.pressBack()
@@ -385,14 +385,14 @@ class HomeFlowTest {
         val month = home.uiState.value.selectedMonth
         val id = seed(month.atDay(15))
         openRecent(id)
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         // Use the existing event handlers for type/date; TASK-003 covers form widgets.
         composeRule.runOnIdle {
             transactions.setAmount("250000")
             transactions.setType(TransactionType.INCOME)
             transactions.setDate(month.plusMonths(1).atDay(1))
         }
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         composeRule.waitUntil(5_000) { home.uiState.value.isEmpty }
         composeRule.onNodeWithTag("transactions_screen").assertExists()
         assertEquals(month.plusMonths(1), transactions.uiState.value.selectedMonth)
@@ -410,10 +410,10 @@ class HomeFlowTest {
     fun directHomeDeleteAndCancelWorkWithoutPreviousListEntry() {
         val id = seed()
         openRecent(id)
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.cancel)).performClick()
         assertEquals(1, runBlocking { repository.observeTransactions().first().size })
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("confirm_delete_button").performClick()
         awaitRows(0)
         composeRule.onNodeWithTag("transactions_screen").assertExists()
@@ -446,7 +446,7 @@ class HomeFlowTest {
         assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
         val id = seed()
         openRecent(id)
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         composeRule.runOnIdle { transactions.setAmount("999") }
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
         composeRule.onNodeWithTag("edit_transaction_button").assertExists()
@@ -527,7 +527,7 @@ class HomeFlowTest {
     object TestDatabaseModule {
         @Provides @Singleton
         fun database(@ApplicationContext context: Context): ExpenseManagerDatabase =
-            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
         @Provides fun dao(database: ExpenseManagerDatabase): TransactionDao = database.transactionDao()
 
         @Provides @Singleton

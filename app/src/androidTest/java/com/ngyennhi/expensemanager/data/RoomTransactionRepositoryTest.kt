@@ -31,7 +31,7 @@ class RoomTransactionRepositoryTest {
     @Before
     fun setUp() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        database = Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+        database = Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
         repository = RoomTransactionRepository(database.transactionDao())
     }
 
@@ -80,11 +80,11 @@ class RoomTransactionRepositoryTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val name = "task002-${System.nanoTime()}.db"
         val saved = draft(type = TransactionType.INCOME, amountVnd = Long.MAX_VALUE, note = null)
-        var fileDatabase = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name).build()
+        var fileDatabase = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
         try {
             val id = RoomTransactionRepository(fileDatabase.transactionDao()).add(saved)
             fileDatabase.close()
-            fileDatabase = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name).build()
+            fileDatabase = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
 
             assertEquals(listOf(Transaction(id, saved.type, saved.amountVnd, saved.category, saved.date, saved.note)),
                 RoomTransactionRepository(fileDatabase.transactionDao()).observeTransactions().first())

@@ -92,8 +92,8 @@ class TransactionViewModel @Inject constructor(
 
     fun selectRecord(id: Long) = update { it.copy(selectedId = id, actionError = null) }
 
-    fun startAdd() = update {
-        it.copy(form = TransactionFormState(date = LocalDate.now()), selectedId = null, actionError = null)
+    fun startAdd(walletId: Long = com.ngyennhi.expensemanager.domain.model.DEFAULT_WALLET_ID) = update {
+        it.copy(form = TransactionFormState(date = LocalDate.now(), walletId = walletId), selectedId = null, actionError = null)
     }
 
     fun startEdit(id: Long) = update { state ->
@@ -118,6 +118,8 @@ class TransactionViewModel @Inject constructor(
     fun setDate(value: LocalDate) = update { it.copy(form = it.form.copy(date = value), actionError = null) }
 
     fun setNote(value: String) = update { it.copy(form = it.form.copy(note = value.take(200)), actionError = null) }
+
+    fun setWallet(value: Long) = update { it.copy(form = it.form.copy(walletId = value), actionError = null) }
 
     fun clearActionError() = update { it.copy(actionError = null) }
 
@@ -145,13 +147,13 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val draft = TransactionDraft(form.type, validAmount, form.category.trim(), form.date,
-                    form.note.trim().ifEmpty{ null })
+                    form.note.trim().ifEmpty{ null }, form.walletId)
                 val saved = if (form.editingId == null) {
                     addTransaction(draft)
                     true
                 } else {
                     updateTransaction(Transaction(form.editingId, draft.type, draft.amountVnd,
-                        draft.category, draft.date, draft.note))
+                        draft.category, draft.date, draft.note, draft.walletId))
                 }
                 if (saved) {
                     update { it.copy(selectedMonth = YearMonth.from(form.date)) }
@@ -206,5 +208,6 @@ class TransactionViewModel @Inject constructor(
         category = category,
         date = date,
         note = note.orEmpty(),
+        walletId = walletId,
     )
 }

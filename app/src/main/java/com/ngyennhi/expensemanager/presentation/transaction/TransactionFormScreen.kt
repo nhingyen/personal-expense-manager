@@ -72,6 +72,9 @@ internal fun TransactionFormScreen(
     onDateChange: (LocalDate) -> Unit,
     onNoteChange: (String) -> Unit,
     onSave: () -> Unit,
+    walletState: com.ngyennhi.expensemanager.presentation.wallet.WalletUiState? = null,
+    onWalletChange: (Long) -> Unit = {},
+    onRetryWallets: () -> Unit = {},
 ) {
     val form = state.form
     val locale = LocalConfiguration.current.locales[0]
@@ -205,6 +208,9 @@ internal fun TransactionFormScreen(
                         supportingText = { Text(stringResource(R.string.note_count, form.note.length)) },
                     )
                 }
+                walletState?.let {
+                    com.ngyennhi.expensemanager.presentation.wallet.WalletPicker(it, form.walletId, !form.isSaving, onWalletChange, onRetryWallets)
+                }
                 when (state.actionError) {
                     ActionError.SAVE_FAILED -> ErrorBanner(stringResource(R.string.save_failed), onSave)
                     ActionError.RECORD_UNAVAILABLE -> ErrorBanner(stringResource(R.string.record_unavailable), onReturnToList)
@@ -212,7 +218,8 @@ internal fun TransactionFormScreen(
                 }
                 Button(
                     onClick = onSave,
-                    enabled = !form.isSaving,
+                    enabled = !form.isSaving && (walletState == null || walletState.status == LoadStatus.READY &&
+                        walletState.wallets.any { it.id == form.walletId }),
                     modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_transaction_button"),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primary),

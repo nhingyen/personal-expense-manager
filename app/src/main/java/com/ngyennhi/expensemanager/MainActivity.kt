@@ -17,12 +17,13 @@ class MainActivity : ComponentActivity() {
     private val transactionViewModel: TransactionViewModel by viewModels()
     private val homeViewModel: HomeViewModel by viewModels()
     private val statisticsViewModel: StatisticsViewModel by viewModels()
+    private val walletViewModel: com.ngyennhi.expensemanager.presentation.wallet.WalletViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PersonalExpenseManagerTheme {
-                ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel)
+                ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel, walletViewModel)
             }
         }
     }

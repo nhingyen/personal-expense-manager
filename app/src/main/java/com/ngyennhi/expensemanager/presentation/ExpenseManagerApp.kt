@@ -28,13 +28,17 @@
     import com.ngyennhi.expensemanager.presentation.navigation.AppRoutes
     import com.ngyennhi.expensemanager.presentation.navigation.AppDestination
     import com.ngyennhi.expensemanager.presentation.common.components.AppBottomBar
-    import com.ngyennhi.expensemanager.presentation.navigation.NavigationPlaceholderScreen
     import com.ngyennhi.expensemanager.presentation.navigation.navigateToTab
     import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
+    import com.ngyennhi.expensemanager.presentation.wallet.*
+    import androidx.compose.ui.res.stringResource
+    import com.ngyennhi.expensemanager.R
+
     @Composable
-    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel) {
+    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel, walletViewModel: WalletViewModel) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
         val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
@@ -60,6 +64,16 @@
         LaunchedEffect(viewModel, navController) {
             viewModel.navigationEvents.collect {
                 returnToList()
+            }
+        }
+
+        LaunchedEffect(walletViewModel, navController) {
+            walletViewModel.navigationEvents.collect { id ->
+                if (id == null) navController.popBackStack(AppRoutes.WALLETS, false)
+                else navController.navigate("wallet/$id") {
+                    popUpTo(AppRoutes.WALLETS)
+                    launchSingleTop = true
+                }
             }
         }
 
@@ -124,7 +138,27 @@
                         onNextMonth = { statisticsViewModel.changeMonth(1) },
                         onRetry = statisticsViewModel::retryObservation)
                 }
-                composable(AppRoutes.SETTINGS) { NavigationPlaceholderScreen(AppDestination.SETTINGS) }
+                composable(AppRoutes.SETTINGS) {
+                    SettingsWalletScreen(onWallets = { navController.navigate(AppRoutes.WALLETS) })
+                }
+                composable(AppRoutes.WALLETS) {
+                    WalletListScreen(walletState, onBack = { navController.popBackStack() },
+                        onAdd = { walletViewModel.startAdd(); navController.navigate(AppRoutes.WALLET_FORM) },
+                        onOpen = { navController.navigate("wallet/$it") }, onRecord = openRecord, onRetry = walletViewModel::retry)
+                }
+                composable(AppRoutes.WALLET_DETAIL, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                    val id = requireNotNull(entry.arguments?.getLong("id"))
+                    WalletDetailScreen(walletState, id, onBack = { navController.popBackStack() },
+                        onEdit = { walletViewModel.startEdit(id); navController.navigate(AppRoutes.WALLET_FORM) },
+                        onDelete = { walletViewModel.delete(id) },
+                        onAddTransaction = { viewModel.startAdd(id); navController.navigate(AppRoutes.ADD) },
+                        onRecord = openRecord, onRetry = walletViewModel::retry)
+                }
+                composable(AppRoutes.WALLET_FORM) {
+                    WalletFormScreen(walletState, onBack = { navController.popBackStack() },
+                        onName = walletViewModel::setName, onType = walletViewModel::setType,
+                        onOpening = walletViewModel::setOpening, onSave = walletViewModel::save, onRetry = walletViewModel::retry)
+                }
                 composable(AppRoutes.ADD) {
                     TransactionFormScreen(
                         state = state,
@@ -137,11 +171,15 @@
                         onDateChange = viewModel::setDate,
                         onNoteChange = viewModel::setNote,
                         onSave = viewModel::save,
+                        walletState = walletState,
+                        onWalletChange = viewModel::setWallet,
+                        onRetryWallets = walletViewModel::retry,
                     )
                 }
                 composable(AppRoutes.DETAIL, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     val id = requireNotNull(entry.arguments?.getLong("id"))
                     LaunchedEffect(id) { viewModel.selectRecord(id) }
+                    val selectedWallet = state.selectedRecord?.walletId?.let { walletId -> walletState.wallets.firstOrNull { it.id == walletId } }
                     TransactionDetailScreen(
                         state = state,
                         onBack = { navController.popBackStack() },
@@ -151,6 +189,11 @@
                             navController.navigate("edit/$id")
                         },
                         onDelete = viewModel::deleteSelected,
+                        walletLoadFailed = walletState.status == com.ngyennhi.expensemanager.presentation.transaction.LoadStatus.ERROR,
+                        onRetryWallets = walletViewModel::retry,
+                        walletLabel = selectedWallet?.let { walletName(it) } ?: stringResource(
+                            if (walletState.status == com.ngyennhi.expensemanager.presentation.transaction.LoadStatus.ERROR) R.string.wallet_read_error
+                            else R.string.wallet_loading),
                         onRetry = viewModel::retryObservation,
                     )
                 }
@@ -170,6 +213,9 @@
                         onDateChange = viewModel::setDate,
                         onNoteChange = viewModel::setNote,
                         onSave = viewModel::save,
+                        walletState = walletState,
+                        onWalletChange = viewModel::setWallet,
+                        onRetryWallets = walletViewModel::retry,
                     )
                 }
             }

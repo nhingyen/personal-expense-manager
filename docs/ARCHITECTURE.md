@@ -57,6 +57,20 @@ AGP generates the locale configuration for Android 13+ system per-app language s
 
 `StatisticsScreen` accepts state/callbacks without repositories or navigation. Compose Canvas draws dynamic donut segments and layout primitives draw paired bars using the same scale. Accessible text lists each category/percentage/exact amount and each month's exact income/expense. Existing top bar/month selector, error banner, icons and theme are reused. Locale formatting and compact donut-center display stay in presentation; exact whole-VND amounts remain visible in totals and legends. No dependency is added.
 
-## Testing
+## Wallet Management (TASK-009)
+
+Room v2 adds `WalletEntity`/`WalletDao` and a required, indexed `transactions.wallet_id` foreign key with `ON DELETE RESTRICT`. Migration `MIGRATION_1_2` creates wallet 1 (cash, zero opening balance), copies every v1 transaction with its original ID and fields into the new table, assigns wallet 1 and preserves the autoincrement sequence, including deleted IDs. The fresh-install callback creates the same wallet. Both exported schemas remain under `app/schemas`; destructive migration is not enabled. Test database builders use the production fresh-install callback too.
+
+`WalletRepository` is a pure domain contract implemented by `RoomWalletRepository`. Observe/save/delete use cases are wired through Hilt. The default wallet is permanent; its blank stored name renders using a VI/EN resource until renamed. Save validates trimmed names (1–60 characters). Opening balances are signed whole-VND Long values, including zero; they are wallet metadata and never synthetic transactions. Other wallets can be deleted only when empty, enforced by one guarded SQL DELETE and the foreign key. Transaction models/drafts/mappers carry wallet IDs through add/edit; Room rejects missing wallet references.
+
+`CalculateWalletBalancesUseCase` groups the existing transaction snapshot by wallet ID and calculates opening + income − expenses over all dates. BigInteger intermediates and exact Long conversion prevent intermediate overflow and detect unsupported final balances/totals. `WalletViewModel` combines wallet/transaction observations into immutable StateFlow; it does not introduce another transaction store. Retry cancels/replaces the collector. Read failure hides data; overflow hides computed amounts but leaves wallets available for correction. Write failures retain editor input; pending writes block repeated saves/deletes and editor changes. Forms survive Activity recreation through the activity ViewModel; unsaved drafts are not restored after process death, matching the existing transaction editor's limitation.
+
+Settings now exposes Wallets. List, detail and form use secondary Navigation Compose routes and hide the shared bottom bar. Wallet detail lists only that wallet's all-time transactions; Add there prefills the wallet. Ordinary Add uses wallet 1. The transaction editor receives wallet state and callbacks from the host, blocks saving until its selection exists in a successful wallet observation, and retains a record's wallet on edit. Transaction details display its wallet name. Successful transaction writes retain the existing return-to-Transactions policy; wallet saves return to wallet detail, and confirmed deletion returns to the wallet list.
+
+Dashboard, Statistics and Budget still observe the same unjoined transaction records and retain their existing month rules. Changing a wallet or its opening balance cannot add report rows or consume a budget. Wallet balances and monthly net income are deliberately different measures.
+
+The only new test library is version-catalog `room-testing`, with schema assets for MigrationTestHelper. A debug-only serialization BOM aligns Room migration JSON 1.8.1 with the serialization core already pulled in by Navigation; otherwise AGP's consistent resolution selected core 1.7.3 and migration schema parsing failed with AbstractMethodError. Release runtime dependencies are unchanged by this test alignment.
+
+## Testing strategy
 
 Test domain rules with local unit tests; test repository mapping and observable updates when Room is introduced; add focused UI tests for important user flows. Each roadmap task names the checks that prove its acceptance criteria.

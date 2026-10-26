@@ -25,6 +25,8 @@ android {
         testInstrumentationRunner = "com.ngyennhi.expensemanager.HiltTestRunner"
     }
 
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+
     buildTypes {
         release {
             optimization {
@@ -71,8 +73,11 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.android.compiler)
+    // Align Room migration test JSON with the serialization core already used by Navigation.
+    debugImplementation(platform(libs.kotlinx.serialization.bom))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
