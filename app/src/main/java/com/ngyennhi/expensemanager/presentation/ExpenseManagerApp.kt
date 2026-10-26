@@ -110,6 +110,7 @@
                         onFilterChange = viewModel::setFilter,
                         onMonthChange = viewModel::changeMonth,
                         onResetFilters = viewModel::resetFilters,
+                        onApplyFilters = viewModel::applyFilters,
                         onAdd = openAdd,
                         onOpenRecord = openRecord,
                         onRetry = viewModel::retryObservation,

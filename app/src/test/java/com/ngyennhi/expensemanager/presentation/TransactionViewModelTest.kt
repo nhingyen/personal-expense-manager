@@ -2,6 +2,7 @@ package com.ngyennhi.expensemanager.presentation
 
 import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
+import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
@@ -107,6 +108,83 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun combinedFiltersFollowObservedChangesAndKeepCategoryChoicesWithoutNewCollectors() = runTest {
+        val start = LocalDate.of(2026, 9, 30)
+        val end = LocalDate.of(2026, 10, 2)
+        val match = transaction(1, TransactionType.EXPENSE, "Food", start, "Lunch")
+        repository.records.value = listOf(
+            transaction(3, TransactionType.INCOME, "Salary", end, "Lunch"),
+            transaction(2, TransactionType.EXPENSE, "Travel", end.plusDays(1), null),
+            match,
+        )
+        runCurrent()
+        viewModel.selectMonth(YearMonth.of(2025, 1))
+        viewModel.setQuery(" LUNCH ")
+        viewModel.setFilter(TransactionFilter.EXPENSE)
+        viewModel.applyFilters("Food", TransactionDateRange(start, end))
+        assertEquals(listOf(1L), viewModel.uiState.value.visibleTransactions.map { it.id })
+        assertEquals(listOf("Food", "Salary", "Travel"), viewModel.uiState.value.availableCategories)
+
+        val added = match.copy(id = 4, date = end)
+        repository.records.value = listOf(added) + repository.records.value
+        runCurrent()
+        assertEquals(listOf(4L, 1L), viewModel.uiState.value.visibleTransactions.map { it.id })
+        repository.records.value = repository.records.value.map { if (it.id == 1L) it.copy(note = "Dinner") else it }
+        runCurrent()
+        assertEquals(listOf(4L), viewModel.uiState.value.visibleTransactions.map { it.id })
+        repository.records.value = repository.records.value.filterNot { it.category == "Food" }
+        runCurrent()
+        assertTrue(viewModel.uiState.value.visibleTransactions.isEmpty())
+        assertEquals("Food", viewModel.uiState.value.selectedCategory)
+        assertEquals(listOf("Food", "Salary", "Travel"), viewModel.uiState.value.availableCategories)
+        assertEquals(1, repository.observationCalls)
+
+        repository.failObservation = true
+        viewModel.retryObservation()
+        runCurrent()
+        assertEquals(LoadStatus.ERROR, viewModel.uiState.value.loadStatus)
+        assertEquals(TransactionDateRange(start, end), viewModel.uiState.value.dateRange)
+        assertEquals(" LUNCH ", viewModel.uiState.value.query)
+        repository.failObservation = false
+        viewModel.retryObservation()
+        runCurrent()
+        assertEquals(LoadStatus.READY, viewModel.uiState.value.loadStatus)
+        assertEquals("Food", viewModel.uiState.value.selectedCategory)
+    }
+
+    @Test
+    fun resetAndViewAllClearEveryFilterAndMonthSelectionReturnsToMonthlyMode() = runTest {
+        runCurrent()
+        val month = YearMonth.of(2024, 2)
+        val range = TransactionDateRange(month.atDay(1), month.atEndOfMonth())
+        fun apply() {
+            viewModel.setQuery("no match")
+            viewModel.setFilter(TransactionFilter.INCOME)
+            viewModel.applyFilters("Custom", range)
+        }
+        apply()
+        assertTrue(viewModel.uiState.value.hasActiveFilters)
+        viewModel.resetFilters()
+        with(viewModel.uiState.value) {
+            assertFalse(hasActiveFilters)
+            assertEquals(YearMonth.now(), selectedMonth)
+            assertEquals("", query)
+            assertEquals(TransactionFilter.ALL, filter)
+            assertEquals(null, selectedCategory)
+            assertEquals(null, dateRange)
+        }
+        apply()
+        viewModel.showAllForMonth(month)
+        assertFalse(viewModel.uiState.value.hasActiveFilters)
+        assertEquals(range, viewModel.uiState.value.period)
+        apply()
+        viewModel.changeMonth(1)
+        assertEquals(null, viewModel.uiState.value.dateRange)
+        assertEquals("Custom", viewModel.uiState.value.selectedCategory)
+        assertEquals(month.plusMonths(1), viewModel.uiState.value.selectedMonth)
+    }
+
+    @Test
     fun invalidAmountsAndCategoryNeverWrite() = runTest {
         val invalidAmounts = listOf("", "0", "-1", "1.5", "9223372036854775808")
         for (input in invalidAmounts) {
@@ -199,6 +277,7 @@ class TransactionViewModelTest {
     private class FakeRepository : TransactionRepository {
         val records = MutableStateFlow<List<Transaction>>(emptyList())
         var addCalls = 0
+        var observationCalls = 0
         var addGate: CompletableDeferred<Unit>? = null
         var observationGate: CompletableDeferred<Unit>? = null
         var failObservation = false
@@ -207,6 +286,7 @@ class TransactionViewModelTest {
         var deleteResult = true
 
         override fun observeTransactions(): Flow<List<Transaction>> = flow {
+            observationCalls++
             observationGate?.await()
             if (failObservation) throw IllegalStateException("Read failed")
             emitAll(records)

@@ -3,10 +3,12 @@ package com.ngyennhi.expensemanager.presentation.transaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ngyennhi.expensemanager.domain.model.Transaction
+import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
+import com.ngyennhi.expensemanager.domain.usecase.FilterTransactionsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.ObserveTransactionsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.UpdateTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,7 @@ class TransactionViewModel @Inject constructor(
     private val addTransaction: AddTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
+    private val filterTransactions: FilterTransactionsUseCase = FilterTransactionsUseCase(),
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(TransactionUiState())
     val uiState: StateFlow<TransactionUiState> = mutableState.asStateFlow()
@@ -44,21 +47,21 @@ class TransactionViewModel @Inject constructor(
 
     fun retryObservation() {
         observationJob?.cancel()
-        mutableState.value = mutableState.value.copy(loadStatus = LoadStatus.LOADING)
+        update { it.copy(loadStatus = LoadStatus.LOADING) }
         observationJob = viewModelScope.launch {
             observeTransactions()
                 .catch { cause ->
                     if (cause is CancellationException) throw cause
-                    mutableState.value = mutableState.value.copy(loadStatus = LoadStatus.ERROR)
+                    update { it.copy(loadStatus = LoadStatus.ERROR) }
                 }
                 .collect { records ->
                     val current = mutableState.value
                     val editing = current.form.editingId?.let { id -> records.firstOrNull { it.id == id } }
-                    mutableState.value = current.copy(
+                    update { current.copy(
                         loadStatus = LoadStatus.READY,
                         transactions = records,
                         form = if (!current.form.initialized && editing != null) editing.asForm() else current.form,
-                    )
+                    ) }
                 }
         }
     }
@@ -67,16 +70,24 @@ class TransactionViewModel @Inject constructor(
 
     fun setFilter(value: TransactionFilter) = update { it.copy(filter = value) }
 
-    fun changeMonth(delta: Long) = update { it.copy(selectedMonth = it.selectedMonth.plusMonths(delta)) }
+    fun changeMonth(delta: Long) = update {
+        it.copy(selectedMonth = it.selectedMonth.plusMonths(delta), dateRange = null)
+    }
 
-    fun selectMonth(month: YearMonth) = update { it.copy(selectedMonth = month) }
+    fun selectMonth(month: YearMonth) = update { it.copy(selectedMonth = month, dateRange = null) }
+
+    fun applyFilters(category: String?, dateRange: TransactionDateRange?) = update {
+        it.copy(selectedCategory = category?.trim()?.takeIf(String::isNotEmpty), dateRange = dateRange)
+    }
 
     fun showAllForMonth(month: YearMonth) = update {
-        it.copy(selectedMonth = month, query = "", filter = TransactionFilter.ALL)
+        it.copy(selectedMonth = month, query = "", filter = TransactionFilter.ALL,
+            selectedCategory = null, dateRange = null)
     }
 
     fun resetFilters() = update {
-        it.copy(query = "", filter = TransactionFilter.ALL, selectedMonth = YearMonth.now())
+        it.copy(query = "", filter = TransactionFilter.ALL, selectedMonth = YearMonth.now(),
+            selectedCategory = null, dateRange = null)
     }
 
     fun selectRecord(id: Long) = update { it.copy(selectedId = id, actionError = null) }
@@ -177,7 +188,15 @@ class TransactionViewModel @Inject constructor(
     }
 
     private fun update(block: (TransactionUiState) -> TransactionUiState) {
-        mutableState.value = block(mutableState.value)
+        val state = block(mutableState.value)
+        val type = when (state.filter) {
+            TransactionFilter.ALL -> null
+            TransactionFilter.EXPENSE -> TransactionType.EXPENSE
+            TransactionFilter.INCOME -> TransactionType.INCOME
+        }
+        mutableState.value = state.copy(visibleTransactions = filterTransactions(
+            state.transactions, state.period, state.query, type, state.selectedCategory,
+        ))
     }
 
     private fun Transaction.asForm() = TransactionFormState(
