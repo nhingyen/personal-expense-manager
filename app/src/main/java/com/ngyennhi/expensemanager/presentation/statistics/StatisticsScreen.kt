@@ -39,6 +39,7 @@ import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.presentation.common.components.MonthSelector
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
 import com.ngyennhi.expensemanager.presentation.transaction.formatMonth
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.util.Currency
@@ -134,7 +135,7 @@ private fun StatisticsTotal(label: String, amount: String, icon: Int, background
         colors = CardDefaults.cardColors(containerColor = background)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(icon), null, Modifier.size(16.dp))
+                Image(painterResource(icon), null, Modifier.size(16.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                 Text(label, style = MaterialTheme.typography.bodySmall, color = tint)
             }
             Text(amount, style = MaterialTheme.typography.titleMedium, color = ExpenseManagerColors.textPrimary)

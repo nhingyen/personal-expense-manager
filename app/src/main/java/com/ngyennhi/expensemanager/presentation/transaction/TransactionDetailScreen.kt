@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -126,7 +127,7 @@ internal fun TransactionDetailScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primaryContainer,
                             contentColor = ExpenseManagerColors.primaryText),
                     ) {
-                        Image(painterResource(R.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Image(painterResource(R.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.edit_transaction))
                     }
@@ -137,7 +138,7 @@ internal fun TransactionDetailScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.expenseContainer,
                             contentColor = ExpenseManagerColors.expense),
                     ) {
-                        Image(painterResource(R.drawable.ic_trash), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Image(painterResource(R.drawable.ic_trash), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.expense))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(if (state.isDeleting) R.string.deleting_transaction else R.string.delete_transaction))
                     }

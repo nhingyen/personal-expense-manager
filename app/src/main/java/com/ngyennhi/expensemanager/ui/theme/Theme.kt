@@ -2,23 +2,28 @@ package com.ngyennhi.expensemanager.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 
-private val LightColorScheme = lightColorScheme(
+@Composable
+private fun appColorScheme(dark: Boolean) = (if (dark) darkColorScheme() else lightColorScheme()).copy(
     primary = ExpenseManagerColors.primary,
-    onPrimary = ExpenseManagerColors.surface,
+    onPrimary = if (dark) Color(0xFF30203F) else Color.White,
     primaryContainer = ExpenseManagerColors.primaryContainer,
     onPrimaryContainer = ExpenseManagerColors.primaryText,
     secondary = ExpenseManagerColors.primaryText,
-    onSecondary = ExpenseManagerColors.surface,
+    onSecondary = if (dark) Color(0xFF30203F) else Color.White,
     secondaryContainer = ExpenseManagerColors.primaryContainer,
     onSecondaryContainer = ExpenseManagerColors.primaryText,
     tertiary = ExpenseManagerColors.yellow,
-    onTertiary = ExpenseManagerColors.surface,
+    onTertiary = if (dark) Color(0xFF443B20) else Color.White,
     tertiaryContainer = ExpenseManagerColors.yellowContainer,
     onTertiaryContainer = ExpenseManagerColors.yellow,
     error = ExpenseManagerColors.expense,
-    onError = ExpenseManagerColors.surface,
+    onError = if (dark) Color(0xFF502E2C) else Color.White,
     errorContainer = ExpenseManagerColors.expenseContainer,
     onErrorContainer = ExpenseManagerColors.expense,
     background = ExpenseManagerColors.background,
@@ -44,11 +49,12 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PersonalExpenseManagerTheme(content: @Composable () -> Unit) {
-    // Figma only defines a light palette. Keep it fixed until a dark design exists.
-    MaterialTheme(
-        colorScheme = LightColorScheme,
-        typography = Typography,
-        content = content,
-    )
+fun PersonalExpenseManagerTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalDarkAppearance provides darkTheme) {
+        MaterialTheme(
+            colorScheme = appColorScheme(darkTheme),
+            typography = Typography,
+            content = content,
+        )
+    }
 }

@@ -19,6 +19,8 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
+TASK-010 adds Settings language (System Default/VI/EN), Light/Dark/System appearance, persisted preferences and About/installed version. It retains the existing Wallets entry, shared bottom navigation and configuration state. See [TASK-010](../tasks/TASK-010.md) for verification; this supersedes earlier Settings/language/theme deferrals below. Cloud sync, authentication, backup and export remain outside scope.
+
 TASK-009 adds manual cash/bank/e-wallet management from Settings, wallet balances and wallet-linked transactions. Room v2 migrates existing records into a permanent default cash wallet without changing report totals. Wallet detail lists all of its transactions; Add/edit can select a saved wallet. No bank integration or transfers. See [TASK-009](../tasks/TASK-009.md) for acceptance criteria and verification; it supersedes the Wallet/Settings-placeholder deferrals below.
 
 TASK-008 extends the existing Home budget sheet with direct month selection, saved-limit/spent/remaining overview, month-specific edit/remove, and reached/exceeded warnings shared with Dashboard. It reuses the existing budget use cases/preferences and Room transactions; see [TASK-008](../tasks/TASK-008.md) for acceptance criteria and current verification.

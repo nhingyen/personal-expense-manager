@@ -34,6 +34,14 @@ TASK-009 wallet screens, captured from the running app with an isolated in-memor
 
 The wallet example has opening balances of 2,000,000 VND cash, 5,000,000 VND bank and 500,000 VND e-wallet, plus an 8,000,000 VND bank income and an 85,000 VND cash expense. The resulting total is 15,415,000 VND. Fixtures are test-only; no production sample records are installed. The earlier transaction gallery predates wallet selection; the new capture above shows the current form.
 
+TASK-010 Settings, captured from the running app on the same API 35 emulator:
+
+| Vietnamese / Light | English / Dark |
+| :---: | :---: |
+| <img src="docs/screenshots/settings-vi-light.png" width="220" alt="Vietnamese Settings with language, appearance, wallets and About"> | <img src="docs/screenshots/settings-en-dark.png" width="220" alt="English Settings with dark appearance and the installed app version"> |
+
+The Settings captures use an isolated test database and the actual app UI, without image retouching. The earlier gallery predates dark appearance.
+
 ## Features
 
 - **Transaction management:** add, view, edit, and delete income or expense records with an amount, category, date, optional note, and saved wallet. Change the wallet when editing a record.
@@ -45,7 +53,8 @@ The wallet example has opening balances of 2,000,000 VND cash, 5,000,000 VND ban
 - **Statistics:** view expense shares by category and compare income and expenses over six months.
 - **Category shortcuts:** choose a suggested or previously used category to start a new transaction.
 - **Offline storage:** keep wallets and transactions in Room, with a schema migration that preserves existing records; budget limits remain in local preferences. No transfers or bank connections are implemented.
-- **Vietnamese and English:** localized labels, dates, and amounts. Vietnamese is the default; Android 13+ supports language selection through system app settings.
+- **Language:** Settings offers **System Default, Vietnamese and English** on API 26+. Labels, dates and amounts follow the selected language; saved categories/notes stay as entered. Vietnamese remains the fallback resource locale. Android 13+ system per-app language settings use the same preference.
+- **Appearance and About:** choose **Light, Dark or System** for the whole app. Theme and language preferences persist locally. Settings also shows the offline app description and installed version, and keeps the Wallets entry.
 
 ## Tech stack
 
@@ -56,7 +65,7 @@ The wallet example has opening balances of 2,000,000 VND cash, 5,000,000 VND ban
 | Architecture | MVVM, Clean Architecture, one `:app` module |
 | State and async work | ViewModel, StateFlow, Kotlin Coroutines, Flow |
 | Navigation | Navigation Compose |
-| Local storage | Room v2 for wallets and transactions, SharedPreferences for monthly budgets |
+| Local storage | Room v2 for wallets and transactions, SharedPreferences for monthly budgets/theme, AndroidX/framework per-app language storage |
 | Dependency injection | Hilt, KSP |
 | Testing | JUnit, Coroutines Test, Compose UI tests, AndroidX Test, Room MigrationTestHelper |
 | Automation | GitHub Actions: debug build, unit tests, and Android Lint |
@@ -102,7 +111,9 @@ Read the [architecture guide](docs/ARCHITECTURE.md) for dependency rules and sta
 3. Select the `app` run configuration and an emulator or connected device, then click **Run**.
 4. Use **Add** to create a transaction. Set a spending limit from **Home → Budget** and open **Statistics** to see the recorded data.
 
-Open **Settings → Wallets & accounts → Add wallet**, enter a name, choose Cash/Bank/E-wallet and enter a whole-VND opening balance. Tap a wallet to view its balance and all transactions, edit it or add a transaction to it. The transaction form also lets you choose a wallet. The default wallet is kept permanently and may be renamed. Wallet and transaction forms retain drafts through Activity recreation; unsaved drafts are not restored after process death. Other Settings controls remain deferred.
+Open **Settings → Wallets & accounts → Add wallet**, enter a name, choose Cash/Bank/E-wallet and enter a whole-VND opening balance. Tap a wallet to view its balance and all transactions, edit it or add a transaction to it. The transaction form also lets you choose a wallet. The default wallet is kept permanently and may be renamed. Wallet and transaction forms retain drafts through Activity recreation; unsaved drafts are not restored after process death.
+
+In **Settings**, select **System Default / Vietnamese / English** and **Light / Dark / System**. Changes apply immediately and remain selected after relaunch. System Default clears the app language override; System appearance follows device dark mode. Language/theme changes preserve navigation, selected months, filters and activity ViewModel drafts, and do not modify saved transactions, wallets or budgets. About displays the installed app version. Cloud sync, authentication, backup/export, currency selection and delete-all are not implemented.
 
 In **Budget**, use the month arrows to select a month, enter a positive whole-VND limit, and tap **Save budget**. Open it again to change or remove that month's limit. Month changes discard unsaved edits; Cancel closes the editor without saving. Only expense transactions in the selected month consume the budget. An unset limit and a month with no expenses have separate states. Budgets are local and independent per month; they do not roll over automatically.
 
@@ -135,5 +146,9 @@ Tests cover transaction/wallet validation, balance isolation and overflow, month
 Monthly budget scope, acceptance criteria, and verification are recorded in [TASK-008](tasks/TASK-008.md).
 
 Wallet scope, acceptance criteria, and verification are recorded in [TASK-009](tasks/TASK-009.md).
+
+Settings/language/theme scope, acceptance criteria and actual verification are recorded in [TASK-010](tasks/TASK-010.md).
+
+TASK-010 verification on Pixel_5/API 35 passed 27 device tests: nine Settings/language/theme tests plus 16 Home and two Wallet regression tests, run by class. Coverage includes selection changes, external Android language settings, configuration recreation, active transaction drafts/date dialogs, persisted theme XML, 200% text and unchanged Room records. The 96 local unit tests passed. API 26 runtime verification remains open because the emulator crashed in ANGLE/D3D11 before app startup; this is not a passed minimum-SDK check. See TASK-010 for commands and limits.
 
 For local development, enable the tracked Git hooks with `git config core.hooksPath .githooks`. See [repository guidance](AGENTS.md) and the [PR checklist](.github/pull_request_template.md) for the contribution workflow.

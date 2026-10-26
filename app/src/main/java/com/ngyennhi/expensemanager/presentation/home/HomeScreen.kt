@@ -51,6 +51,7 @@ import com.ngyennhi.expensemanager.presentation.common.components.MonthSelector
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionRow
 import com.ngyennhi.expensemanager.presentation.transaction.formatMonth
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 /** Renders ViewModel state; data observation and navigation belong to the caller. */
@@ -93,7 +94,7 @@ fun HomeScreen(
                     modifier = Modifier.testTag("home_add"),
                     containerColor = ExpenseManagerColors.primary,
                     contentColor = ExpenseManagerColors.surface,
-                    icon = { Image(painterResource(R.drawable.ic_plus), null, Modifier.size(22.dp)) },
+                    icon = { Image(painterResource(R.drawable.ic_plus), null, Modifier.size(22.dp), colorFilter = appearanceIconFilter(MaterialTheme.colorScheme.onPrimary)) },
                     text = { Text(stringResource(R.string.add_transaction)) },
                 )
             }

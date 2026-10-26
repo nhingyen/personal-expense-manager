@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.*
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 
@@ -41,7 +42,7 @@ internal fun WalletIcon(type: WalletType) {
         WalletType.E_WALLET -> ExpenseManagerColors.incomeContainer
     }, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
         Image(painterResource(if (type == WalletType.BANK) R.drawable.ic_wallet_bank else R.drawable.ic_wallet),
-            null, Modifier.size(22.dp))
+            null, Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
     }
 }
 
@@ -51,7 +52,7 @@ internal fun WalletBalanceCard(label: String, amount: Long, supporting: String) 
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = ExpenseManagerColors.primaryText)
-                Image(painterResource(R.drawable.ic_wallet), null, Modifier.size(22.dp))
+                Image(painterResource(R.drawable.ic_wallet), null, Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
             }
             Text(walletAmount(amount), style = MaterialTheme.typography.headlineLarge,
                 color = ExpenseManagerColors.primaryText)

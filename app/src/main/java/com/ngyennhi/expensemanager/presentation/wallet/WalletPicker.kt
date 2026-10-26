@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.presentation.transaction.LoadStatus
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -30,10 +31,10 @@ internal fun WalletPicker(state: WalletUiState, selectedId: Long, enabled: Boole
                     .clickable(enabled = enabled) { expanded = true }) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Image(painterResource(R.drawable.ic_wallet_form), null, Modifier.size(18.dp))
+                    Image(painterResource(R.drawable.ic_wallet_form), null, Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                     Text(stringResource(R.string.wallet_selected, wallet?.let { walletName(it) }
                         ?: stringResource(R.string.wallet_choose)), Modifier.weight(1f))
-                    Image(painterResource(R.drawable.ic_chevron_down), null, Modifier.size(18.dp))
+                    Image(painterResource(R.drawable.ic_chevron_down), null, Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                 }
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

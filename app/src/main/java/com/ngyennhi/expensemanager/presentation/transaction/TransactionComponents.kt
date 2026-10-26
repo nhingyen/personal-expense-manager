@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.util.Locale
 
@@ -60,7 +61,7 @@ internal fun TypeChip(
         Box(
             modifier = Modifier.fillMaxWidth().heightIn(min = 36.dp)
                 .background(
-                    if (selected) ExpenseManagerColors.primaryContainer else Color.White,
+                    if (selected) ExpenseManagerColors.primaryContainer else ExpenseManagerColors.surface,
                     RoundedCornerShape(100.dp),
                 )
                 .border(1.dp, if (selected) ExpenseManagerColors.primaryContainer else ExpenseManagerColors.outline,
@@ -99,7 +100,7 @@ internal fun CategoryIcon(category: String, type: TransactionType, size: Dp = 44
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
-            Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(22.dp))
+            Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(22.dp), colorFilter = appearanceIconFilter(if (type == TransactionType.INCOME) ExpenseManagerColors.income else ExpenseManagerColors.expense))
         } else {
             Text(category.trim().take(1).uppercase(Locale.ROOT), style = MaterialTheme.typography.titleMedium,
                 color = if (type == TransactionType.INCOME) ExpenseManagerColors.income else ExpenseManagerColors.expense)

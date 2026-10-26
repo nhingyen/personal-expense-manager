@@ -36,7 +36,12 @@
     import com.ngyennhi.expensemanager.R
 
     @Composable
-    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel, walletViewModel: WalletViewModel) {
+    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel, walletViewModel: WalletViewModel,
+        settings: com.ngyennhi.expensemanager.presentation.settings.SettingsUiState,
+        onLanguage: (com.ngyennhi.expensemanager.domain.model.AppLanguage) -> Unit,
+        onTheme: (com.ngyennhi.expensemanager.domain.model.AppTheme) -> Unit,
+        onRetrySettings: () -> Unit,
+    ) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
         val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -139,7 +144,9 @@
                         onRetry = statisticsViewModel::retryObservation)
                 }
                 composable(AppRoutes.SETTINGS) {
-                    SettingsWalletScreen(onWallets = { navController.navigate(AppRoutes.WALLETS) })
+                    com.ngyennhi.expensemanager.presentation.settings.SettingsScreen(settings,
+                        onLanguage, onTheme, onRetrySettings,
+                        onWallets = { navController.navigate(AppRoutes.WALLETS) })
                 }
                 composable(AppRoutes.WALLETS) {
                     WalletListScreen(walletState, onBack = { navController.popBackStack() },
