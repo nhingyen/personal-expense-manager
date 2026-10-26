@@ -19,6 +19,8 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
+TASK-011 adds optional Firebase Email/Password login/register, observed/persisted auth state, Settings account status/logout and local Guest Mode. TASK-012 adds a Credential Manager Google sign-in button under explicit separate-provider account configuration. Home and all financial features remain available offline without login. Financial data remains device-wide, not protected separately for each account; login/logout never merges, deletes or synchronizes it. Firestore and Cloud Sync are excluded. See [TASK-011](../tasks/TASK-011.md) and [TASK-012](../tasks/TASK-012.md); these supersede earlier authentication deferrals below.
+
 TASK-010 adds Settings language (System Default/VI/EN), Light/Dark/System appearance, persisted preferences and About/installed version. It retains the existing Wallets entry, shared bottom navigation and configuration state. See [TASK-010](../tasks/TASK-010.md) for verification; this supersedes earlier Settings/language/theme deferrals below. Cloud sync, authentication, backup and export remain outside scope.
 
 TASK-009 adds manual cash/bank/e-wallet management from Settings, wallet balances and wallet-linked transactions. Room v2 migrates existing records into a permanent default cash wallet without changing report totals. Wallet detail lists all of its transactions; Add/edit can select a saved wallet. No bank integration or transfers. See [TASK-009](../tasks/TASK-009.md) for acceptance criteria and verification; it supersedes the Wallet/Settings-placeholder deferrals below.

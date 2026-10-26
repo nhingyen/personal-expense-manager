@@ -16,3 +16,6 @@ local.properties
 
 # Android Studio
 .idea/
+
+# Environment-specific Firebase client configuration (use the checked-in example for offline builds).
+/app/google-services.json

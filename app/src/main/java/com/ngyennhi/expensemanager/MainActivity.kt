@@ -12,13 +12,18 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.ngyennhi.expensemanager.presentation.ExpenseManagerApp
+import com.ngyennhi.expensemanager.presentation.auth.AuthActions
+import com.ngyennhi.expensemanager.presentation.auth.AuthViewModel
+import com.ngyennhi.expensemanager.presentation.auth.GoogleCredentialPicker
 import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
 import com.ngyennhi.expensemanager.presentation.settings.SettingsViewModel
 import com.ngyennhi.expensemanager.presentation.statistics.StatisticsViewModel
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -27,12 +32,14 @@ class MainActivity : AppCompatActivity() {
     private val statisticsViewModel: StatisticsViewModel by viewModels()
     private val walletViewModel: com.ngyennhi.expensemanager.presentation.wallet.WalletViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         enableEdgeToEdge()
         setContent {
             val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
+            val auth by authViewModel.uiState.collectAsStateWithLifecycle()
             val dark = settings.theme.isDark(isSystemInDarkTheme())
             SideEffect {
                 enableEdgeToEdge(
@@ -46,7 +53,16 @@ class MainActivity : AppCompatActivity() {
             if (settings.isInitialized) {
                 PersonalExpenseManagerTheme(darkTheme = dark) {
                     ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel, walletViewModel,
-                        settings, settingsViewModel::setLanguage, settingsViewModel::setTheme, settingsViewModel::retry)
+                        settings, settingsViewModel::setLanguage, settingsViewModel::setTheme, settingsViewModel::retry,
+                        authState = auth, authActions = AuthActions(
+                            onOpen = authViewModel::startLogin, onEmail = authViewModel::setEmail,
+                            onRegistering = authViewModel::setRegistering, onPasswordChanged = authViewModel::clearPasswordErrors,
+                            onSubmit = authViewModel::submit,
+                            onGoogle = { lifecycleScope.launch {
+                                authViewModel.loginWithGoogle { GoogleCredentialPicker.requestIdToken(this@MainActivity) }
+                            } },
+                            onLogout = authViewModel::logout,
+                            onRetrySession = authViewModel::retrySession, onDismiss = authViewModel::dismissForm))
                 }
             }
         }

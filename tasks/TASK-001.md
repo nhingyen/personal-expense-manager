@@ -57,3 +57,23 @@ Add focused tests only for meaningful behavior introduced here; use resource/lin
 - This SDK has no API 26 system image, so minimum-SDK startup remains unverified.
 
 **Remaining device check:** Launch the debug APK on an API 26 device or emulator and confirm there is no startup crash before marking TASK-001 complete.
+
+## Dependency maintenance: Firebase Kotlin compatibility (2026-10-26)
+
+Scope: fix the build failure in the existing Firebase setup while retaining Kotlin 2.2.10 and the current AGP, Compose, KSP and Hilt tooling. Authentication screens and account behavior remain deferred.
+
+The original `:app:compileDebugKotlin` run failed because Firebase BoM 35.1.0 selected `firebase-auth:25.0.0`, whose Kotlin metadata version is 2.4.0; the project compiler expected 2.2.0. Pin the catalog's BoM to 34.10.0, which selects Auth 24.0.1 according to the [Firebase release mapping](https://firebase.google.com/support/release-notes/android#bom_v34-10-0). Keep the Auth dependency versionless under the BoM and keep compiler metadata checks enabled.
+
+Acceptance criteria:
+
+- Gradle dependency insight selects Auth 24.0.1 from BoM 34.10.0.
+- The debug APK, existing local unit tests and debug lint pass with Kotlin 2.2.10.
+- README records the compatibility pin and actual verification; no authentication feature is claimed.
+
+Verification with the final BoM 34.10.0 configuration:
+
+- `.\gradlew.bat :app:dependencyInsight --dependency com.google.firebase:firebase-auth --configuration debugCompileClasspath --console=plain`: **passed**; Auth 24.0.1 is selected by the BoM 34.10.0 constraint.
+- `.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --console=plain`: **passed** in 3m 25s. Kotlin compilation completed without metadata errors; the debug APK was generated at `app/build/outputs/apk/debug/app-debug.apk`.
+- Unit-test XML reports: **96 tests, 0 failures, 0 errors, 0 skipped** across 17 suites. Lint XML reports: **0 errors, 15 warnings, 1 hint**.
+- `git diff --check`: **passed**. AGP 9.4.1, Kotlin 2.2.10, Hilt 2.60.1 and KSP 2.3.12 remain unchanged; no metadata-check bypass was added.
+- No device tests or authentication runtime checks were run for this dependency fix. The existing API 26 startup verification remains open. No commit or push was performed.
