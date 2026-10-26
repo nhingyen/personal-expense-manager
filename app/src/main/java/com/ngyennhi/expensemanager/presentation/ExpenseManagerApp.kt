@@ -17,6 +17,8 @@
     import androidx.navigation.compose.currentBackStackEntryAsState
     import androidx.navigation.navArgument
     import com.ngyennhi.expensemanager.presentation.home.HomeScreen
+    import com.ngyennhi.expensemanager.presentation.statistics.StatisticsScreen
+    import com.ngyennhi.expensemanager.presentation.statistics.StatisticsViewModel
     import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
     import com.ngyennhi.expensemanager.presentation.home.HomeActions
     import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
@@ -31,7 +33,7 @@
     import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
     @Composable
-    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel) {
+    fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
         val navController = rememberNavController()
@@ -114,7 +116,13 @@
                         showFloatingAdd = false,
                     )
                 }
-                composable(AppRoutes.STATISTICS) { NavigationPlaceholderScreen(AppDestination.STATISTICS) }
+                composable(AppRoutes.STATISTICS) {
+                    val statisticsState by statisticsViewModel.uiState.collectAsStateWithLifecycle()
+                    StatisticsScreen(statisticsState,
+                        onPreviousMonth = { statisticsViewModel.changeMonth(-1) },
+                        onNextMonth = { statisticsViewModel.changeMonth(1) },
+                        onRetry = statisticsViewModel::retryObservation)
+                }
                 composable(AppRoutes.SETTINGS) { NavigationPlaceholderScreen(AppDestination.SETTINGS) }
                 composable(AppRoutes.ADD) {
                     TransactionFormScreen(

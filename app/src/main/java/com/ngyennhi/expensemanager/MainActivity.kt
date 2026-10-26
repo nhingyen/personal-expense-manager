@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import com.ngyennhi.expensemanager.presentation.ExpenseManagerApp
 import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
+import com.ngyennhi.expensemanager.presentation.statistics.StatisticsViewModel
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -15,12 +16,13 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val transactionViewModel: TransactionViewModel by viewModels()
     private val homeViewModel: HomeViewModel by viewModels()
+    private val statisticsViewModel: StatisticsViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PersonalExpenseManagerTheme {
-                ExpenseManagerApp(transactionViewModel, homeViewModel)
+                ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel)
             }
         }
     }
