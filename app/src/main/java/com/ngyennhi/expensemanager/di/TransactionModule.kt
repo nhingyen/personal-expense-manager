@@ -7,6 +7,7 @@ import com.ngyennhi.expensemanager.data.local.TransactionDao
 import com.ngyennhi.expensemanager.data.repository.RoomTransactionRepository
 import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
+import com.ngyennhi.expensemanager.domain.usecase.CalculateMonthlyStatisticsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.CalculateMonthlySummaryUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.FilterTransactionsUseCase
@@ -38,6 +39,10 @@ object TransactionDatabaseModule {
 object TransactionUseCaseModule {
     @Provides
     fun provideFilterTransactionsUseCase(): FilterTransactionsUseCase = FilterTransactionsUseCase()
+
+    @Provides
+    fun provideCalculateMonthlyStatisticsUseCase(summary: CalculateMonthlySummaryUseCase): CalculateMonthlyStatisticsUseCase =
+        CalculateMonthlyStatisticsUseCase(summary)
 
     @Provides
     fun provideAddTransactionUseCase(repository: TransactionRepository): AddTransactionUseCase =

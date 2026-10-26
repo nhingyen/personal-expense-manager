@@ -37,6 +37,7 @@ import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
 import com.ngyennhi.expensemanager.presentation.home.HomeLoadStatus
 import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
+import com.ngyennhi.expensemanager.presentation.statistics.StatisticsViewModel
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionFilter
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
 import dagger.Module
@@ -76,6 +77,37 @@ class HomeFlowTest {
     @After fun tearDown() { database.close() }
 
     @Test
+    fun statisticsObservesRoomChangesAndPreservesItsMonthAcrossTabsAndRecreation() {
+        val statistics = ViewModelProvider(composeRule.activity)[StatisticsViewModel::class.java]
+        val selectedMonth = statistics.uiState.value.selectedMonth.minusMonths(1)
+        composeRule.onNodeWithTag("nav_statistics").performClick()
+        composeRule.onNodeWithTag("month_previous").performClick()
+        composeRule.waitUntil(5_000) { statistics.uiState.value.statistics?.summary?.month == selectedMonth }
+        val id = runBlocking {
+            repository.add(TransactionDraft(TransactionType.EXPENSE, 125, "Saved category", selectedMonth.atDay(1), null))
+        }
+        composeRule.waitUntil(5_000) { statistics.uiState.value.statistics?.summary?.expenseVnd == 125L }
+        composeRule.onNodeWithText("Saved category").assertExists()
+        val saved = runBlocking { repository.observeTransactions().first().single() }
+        runBlocking { repository.update(saved.copy(amountVnd = 250, type = TransactionType.INCOME)) }
+        composeRule.waitUntil(5_000) { statistics.uiState.value.statistics?.summary?.incomeVnd == 250L }
+        composeRule.onNodeWithTag("statistics_no_expenses").assertExists()
+        composeRule.onNodeWithTag("nav_home").performClick()
+        composeRule.onNodeWithTag("nav_statistics").performClick()
+        assertEquals(selectedMonth, statistics.uiState.value.selectedMonth)
+        composeRule.activityRule.scenario.recreate()
+        awaitReady()
+        composeRule.onNodeWithTag("nav_statistics").assertIsSelected()
+        val recreated = ViewModelProvider(composeRule.activity)[StatisticsViewModel::class.java]
+        assertEquals(selectedMonth, recreated.uiState.value.selectedMonth)
+        runBlocking { repository.delete(id) }
+        composeRule.waitUntil(5_000) { recreated.uiState.value.statistics?.summary?.incomeVnd == 0L }
+        composeRule.onNodeWithTag("statistics_empty").assertExists()
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("nav_home").assertIsSelected()
+    }
+
+    @Test
     fun primaryTabsPreserveFiltersAndRecreationRestoresSelectedDestination() {
         val month = home.uiState.value.selectedMonth.minusMonths(2)
         composeRule.onNodeWithTag("nav_home").assertIsSelected()
@@ -91,7 +123,7 @@ class HomeFlowTest {
         val homeMonth = home.uiState.value.selectedMonth
         repeat(3) {
             composeRule.onNodeWithTag("nav_statistics").performClick().assertIsSelected()
-            composeRule.onNodeWithTag("statistics_placeholder").assertExists()
+            composeRule.onNodeWithTag("statistics_screen").assertExists()
             composeRule.onNodeWithTag("nav_settings").performClick().assertIsSelected()
             composeRule.onNodeWithTag("settings_placeholder").assertExists()
             composeRule.onNodeWithTag("nav_home").assertIsNotSelected().performClick().assertIsSelected()
