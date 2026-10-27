@@ -34,10 +34,6 @@ internal fun SettingsScreen(
     onTheme: (AppTheme) -> Unit,
     onRetry: () -> Unit,
     onWallets: () -> Unit,
-    authState: com.ngyennhi.expensemanager.presentation.auth.AuthUiState = com.ngyennhi.expensemanager.presentation.auth.AuthUiState(isInitialized = true),
-    onLogin: () -> Unit = {},
-    onLogout: () -> Unit = {},
-    onRetryAuth: () -> Unit = {},
 ) {
     val enabled = !state.isLoading && !state.isSaving && !state.readError
     Scaffold(containerColor = ExpenseManagerColors.background,
@@ -48,7 +44,6 @@ internal fun SettingsScreen(
             if (state.isLoading || state.isSaving) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (state.readError) ErrorBanner(stringResource(R.string.settings_read_error), onRetry)
             if (state.writeError) ErrorBanner(stringResource(R.string.settings_write_error))
-            com.ngyennhi.expensemanager.presentation.auth.AccountCard(authState, onLogin, onLogout, onRetryAuth)
             SettingsCard {
                 SettingsHeading(R.drawable.ic_settings_languages, stringResource(R.string.settings_language))
                 // System fills a row; the two explicit languages retain the reference's equal columns.

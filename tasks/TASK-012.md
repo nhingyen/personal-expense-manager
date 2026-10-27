@@ -1,5 +1,7 @@
 # TASK-012: Google Sign-In extension to TASK-011
 
+> Historical record: this authentication implementation and its setup instructions are retired from v1.0.0 by [TASK-013](TASK-013.md). The current app is offline-only and has no login/account UI. Verification below applies to the earlier implementation.
+
 ## Scope
 
 Extend TASK-011's existing Email/Password authentication with an explicit Google sign-in button on Login, using Credential Manager, Google ID and Firebase Authentication. Reuse AuthRepository, AuthViewModel, the observed session and current navigation. Keep Guest Mode, Room v2 and all financial preferences independent of authentication. No Cloud Sync, account linking, reset/deletion or dependency upgrades.

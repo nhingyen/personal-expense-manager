@@ -27,27 +27,6 @@ jobs:
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-37.0" "build-tools;36.0.0"
 
-      - name: Prepare Firebase client configuration
-        env:
-          FIREBASE_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          supplied = os.environ.get("FIREBASE_GOOGLE_SERVICES_JSON", "")
-          try:
-              config = json.loads(supplied) if supplied else json.loads(Path("app/google-services.example.json").read_text())
-              packages = [client["client_info"]["android_client_info"]["package_name"] for client in config["client"]]
-              if "com.ngyennhi.expensemanager" not in packages:
-                  raise ValueError()
-          except (ValueError, KeyError, TypeError):
-              raise SystemExit("Firebase configuration is invalid or does not match the application ID.") from None
-          Path("app/google-services.json").write_text(json.dumps(config), encoding="utf-8")
-          print("Firebase config prepared: " + ("repository secret" if supplied else "non-production CI example (live auth unavailable)"))
-          PY
-
       - name: Build, test, and lint
         run: bash ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 

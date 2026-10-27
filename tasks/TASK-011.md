@@ -1,5 +1,7 @@
 # TASK-011: Firebase Authentication & Guest Mode
 
+> Historical record: this authentication implementation and its setup instructions are retired from v1.0.0 by [TASK-013](TASK-013.md). The current app is offline-only and has no login/account UI. Verification below applies to the earlier implementation.
+
 ## Scope
 
 Add optional Firebase Email/Password login and registration, persisted Firebase auth state, logout and offline Guest Mode. Home remains the startup route; Settings exposes the current account or Guest and opens a secondary authentication screen. Reuse MVVM, Hilt, immutable StateFlow, the Design System and VI/EN resources in the single `:app` module.
