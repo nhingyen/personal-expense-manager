@@ -16,7 +16,6 @@ internal object AppRoutes {
     const val WALLETS = "wallets"
     const val WALLET_DETAIL = "wallet/{id}"
     const val WALLET_FORM = "wallet-form"
-    const val AUTH = "auth"
 }
 
 internal enum class AppDestination(

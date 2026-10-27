@@ -34,9 +34,6 @@
     import com.ngyennhi.expensemanager.presentation.wallet.*
     import androidx.compose.ui.res.stringResource
     import com.ngyennhi.expensemanager.R
-    import com.ngyennhi.expensemanager.presentation.auth.AuthActions
-    import com.ngyennhi.expensemanager.presentation.auth.AuthUiState
-    import com.ngyennhi.expensemanager.presentation.auth.AuthScreen
 
     @Composable
     fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel, walletViewModel: WalletViewModel,
@@ -44,8 +41,6 @@
         onLanguage: (com.ngyennhi.expensemanager.domain.model.AppLanguage) -> Unit,
         onTheme: (com.ngyennhi.expensemanager.domain.model.AppTheme) -> Unit,
         onRetrySettings: () -> Unit,
-        authState: AuthUiState = AuthUiState(isInitialized = true),
-        authActions: AuthActions = AuthActions(),
     ) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
@@ -151,22 +146,7 @@
                 composable(AppRoutes.SETTINGS) {
                     com.ngyennhi.expensemanager.presentation.settings.SettingsScreen(settings,
                         onLanguage, onTheme, onRetrySettings,
-                        onWallets = { navController.navigate(AppRoutes.WALLETS) },
-                        authState = authState,
-                        onLogin = { authActions.onOpen(); navController.navigate(AppRoutes.AUTH) { launchSingleTop = true } },
-                        onLogout = authActions.onLogout, onRetryAuth = authActions.onRetrySession)
-                }
-                composable(AppRoutes.AUTH) {
-                    LaunchedEffect(authState.user, authState.isSubmitting) {
-                        if (authState.user != null && !authState.isSubmitting) {
-                            authActions.onDismiss()
-                            navController.popBackStack()
-                        }
-                    }
-                    AuthScreen(authState, authActions, onBack = {
-                        authActions.onDismiss()
-                        navController.popBackStack()
-                    })
+                        onWallets = { navController.navigate(AppRoutes.WALLETS) })
                 }
                 composable(AppRoutes.WALLETS) {
                     WalletListScreen(walletState, onBack = { navController.popBackStack() },

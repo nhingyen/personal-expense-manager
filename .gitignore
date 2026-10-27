@@ -17,5 +17,5 @@ local.properties
 # Android Studio
 .idea/
 
-# Environment-specific Firebase client configuration (use the checked-in example for offline builds).
+# Keep obsolete local service credentials out of version control.
 /app/google-services.json

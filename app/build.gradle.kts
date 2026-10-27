@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.google.services)
 }
 
 ksp {
@@ -20,13 +19,8 @@ android {
         applicationId = "com.ngyennhi.expensemanager"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
-
-        // Opt in only after configuring separate accounts per provider in Firebase Console.
-        // Firebase's default trusted-provider auto-linking can overwrite password accounts.
-        buildConfigField("boolean", "GOOGLE_SEPARATE_ACCOUNTS_CONFIRMED",
-            (providers.gradleProperty("googleSeparateAccountsConfirmed").orNull == "true").toString())
+        versionCode = 2
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "com.ngyennhi.expensemanager.HiltTestRunner"
     }
@@ -46,7 +40,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
     androidResources {
         generateLocaleConfig = true
@@ -70,7 +63,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.hilt.android)
@@ -89,11 +81,4 @@ dependencies {
     debugImplementation(platform(libs.kotlinx.serialization.bom))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    // Firebase Bill of Materials
-    implementation(platform(libs.firebase.bom))
-    // Firebase Authentication
-    implementation(libs.firebase.auth)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.google.identity)
 }

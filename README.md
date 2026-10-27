@@ -1,14 +1,14 @@
 # Personal Expense Manager
 
-An Android portfolio app for tracking income, expenses, wallets and monthly budgets. Core features work offline without an account.
+**v1.0.0 - Offline-only.** An Android portfolio app for tracking income, expenses, wallets and monthly budgets. The app opens directly into Home with one local financial profile.
 
 ## Screenshots
 
-Captured on Pixel 5 / API 35. Financial screens use sample data. The Login screenshot shows the Google button; the Register and Settings screenshots predate the TASK-012 account updates.
+Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captures are refreshed for the offline release; earlier financial captures retain the same features.
 
-| Log in | Register | Home | Transactions |
+| Home | Transactions |  |  |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/auth-login.png" width="220" alt="Login with Google and Guest options"> | <img src="docs/screenshots/auth-register.png" width="220" alt="Registration form"> | <img src="docs/screenshots/home.png" width="220" alt="Monthly overview"> | <img src="docs/screenshots/transactions.png" width="220" alt="Transaction list"> |
+| <img src="docs/screenshots/home.png" width="220" alt="Monthly overview"> | <img src="docs/screenshots/transactions.png" width="220" alt="Transaction list"> |  |  |
 
 | Add transaction | Transaction details | Statistics | Transaction filters |
 | :---: | :---: | :---: | :---: |
@@ -34,13 +34,20 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. The Login scree
 - Search and filter transactions by type, category and date.
 - View category charts and six-month income/expense comparisons.
 - Choose Vietnamese/English and Light/Dark/System appearance.
-- Use Guest mode or optional Firebase Email/Password login, registration, Google sign-in and logout.
+- Open and use every financial feature without an account or network.
 
-**Data stays on the device and is shared by Guest mode and all accounts. It is not protected separately per account.** Login/logout never merges, deletes or syncs financial data. Cloud sync and bank connections are not implemented.
+Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
+
+Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
+
+## Future Improvements
+
+- Cloud Backup & Restore, with explicit ownership, validation and confirmed restoration.
+- Local Multi-account, with separate financial data per profile and a deliberate plan for existing ownerless data.
 
 ## Tech stack
 
-Kotlin · Jetpack Compose · Material 3 · Room · Firebase Authentication · Hilt · Coroutines/StateFlow · Navigation Compose.
+Kotlin · Jetpack Compose · Material 3 · Room · Hilt · Coroutines/StateFlow · Navigation Compose.
 
 MVVM + Clean Architecture in one `:app` module: `presentation → domain ← data`. See [Architecture](docs/ARCHITECTURE.md).
 
@@ -49,25 +56,8 @@ MVVM + Clean Architecture in one `:app` module: `presentation → domain ← dat
 Requires Android Studio supporting **AGP 9.4.1**, **JDK 25**, **SDK 37**, Build Tools **36.0.0**, and an **API 26+** device. Gradle is provided by the wrapper.
 
 1. Clone the repository and open it in Android Studio.
-2. Configure Firebase below and set your Android SDK path.
-3. Sync Gradle, select `app`, and click **Run**.
-
-After verifying the console policy, opt in for the build from PowerShell:
-
-```powershell
-$env:ORG_GRADLE_PROJECT_googleSeparateAccountsConfirmed = 'true'
-.\gradlew.bat :app:assembleDebug
-```
-
-This flag only confirms the project setting; it cannot configure Firebase remotely. Without the flag, the Google button reports that sign-in is not configured and cannot send a Google credential to Firebase. No automatic provider linking or account migration is implemented. Google sign-out also clears Credential Manager's active credential state; local Guest access remains available if provider cleanup fails.
-
-For Guest-only builds, if no local config exists:
-
-```powershell
-Copy-Item app/google-services.example.json app/google-services.json
-```
-
-The example uses dummy credentials; live authentication requires a real Firebase config. CI uses the example unless the optional **`FIREBASE_GOOGLE_SERVICES_JSON`** repository secret supplies the full JSON.
+2. Set your Android SDK path in local.properties.
+3. Sync Gradle, select `app`, and click **Run**. No service configuration or credentials are required.
 
 ## Build & test
 
@@ -75,13 +65,20 @@ The example uses dummy credentials; live authentication requires a real Firebase
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-Device tests, with an emulator/device connected:
+For the offline launch regression on a connected emulator, install updates without clearing storage:
 
 ```powershell
-.\gradlew.bat :app:connectedDebugAndroidTest
+.\gradlew.bat :app:assembleDebugAndroidTest
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb shell am instrument -w -e class com.ngyennhi.expensemanager.presentation.OfflineFlowTest com.ngyennhi.expensemanager.test/com.ngyennhi.expensemanager.HiltTestRunner
 ```
 
+The regression uses isolated test storage. For an existing installation, keep the application ID and signing key, use `adb install -r`, and do not uninstall or clear app storage. Room stays at schema v2 with database `expense_manager.db`; budgets keep `monthly_budgets` and their existing keys. [TASK-013](tasks/TASK-013.md) records release checks and the manual emulator checklist.
+
 On macOS/Linux, use `./gradlew`. APK: `app/build/outputs/apk/debug/app-debug.apk`.
+
+Verified on Pixel_5 / API 35: Debug Build, 96 Unit Tests, Lint (0 errors, 16 warnings, 1 hint), and 11 selected offline device tests passed. An in-place upgrade retained all 4 existing transactions, 1 wallet and saved budget preferences; schema v2 and stored values matched before/after installation and cold launch. API 26 and release-signed upgrade verification remain manual. See TASK-013 for details.
 
 ## Documentation
 
