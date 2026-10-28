@@ -7,8 +7,9 @@ working tree có sẵn các thay đổi TASK-014; giữ nguyên các thay đổi
 
 **Kết luận: Not Ready for v1.0.0 để phân phối.** Signed upgrade v2 → v3 đã
 **PASS trên AVD API 35 riêng** trong lượt thực thi 2026-10-28, gồm bảo toàn dữ
-liệu và logo mới. Runtime API 26 chưa xác minh và workflow CI mới chưa có remote
-run; các manual gates còn mở không được thay thế bởi PASS API 35. Xem phần kết
+liệu và logo mới. Runtime API 26 chưa xác minh; CI run 40648694159 thất bại vì
+profile `Pixel 2` không có trên runner. Bản sửa local chưa được chạy lại trên CI;
+các manual gates còn mở không được thay thế bởi PASS API 35. Xem phần kết
 quả thực thi Signed Upgrade cuối báo cáo; các mục chờ ký/chưa upgrade là lịch sử.
 
 ## Phát hiện và xử lý
@@ -615,3 +616,36 @@ mẫu, app stopped sau capture cuối. Không downgrade về v2.
 **Release tổng thể vẫn Not Ready**: API 26 startup/migration, remote CI và manual
 gates còn mở. Signed v3 verification và signed-upgrade/data-retention/icon gate
 được đóng cho API 35; không tiếp tục liệt kê chúng là thiếu bằng chứng ở mốc này.
+
+## CI emulator profile — Run 40648694159, 2026-10-28
+
+Đã đọc metadata và failed log bằng GitHub CLI, không kích hoạt rerun:
+[run 40648694159](https://github.com/nhingyen/personal-expense-manager/actions/runs/40648694159),
+HEAD `ebd8ffb0cfd5ba9168f46929a193af5af3ebacc1`, conclusion **failure**;
+job [`api26-release-migration`](https://github.com/nhingyen/personal-expense-manager/actions/runs/40648694159/job/122683442945)
+**failure**. Log ghi `profile: Pixel 2`, `Hardware profile: Pixel 2`, rồi lúc
+07:14:44Z: `Error: No device found matching --device Pixel 2.`
+
+Nguyên nhân: override hardware profile không tồn tại trong danh sách device của
+avdmanager trên runner. Job lỗi ở cấu hình AVD, chưa chứng nhận startup/migration
+trên API 26; không phải bằng chứng test assertion của app thất bại.
+
+Working tree đã có bản sửa bỏ `profile: Pixel 2` trước lượt này; giữ nguyên bản
+sửa để emulator-runner dùng profile mặc định. So với HEAD, YAML chỉ xóa đúng
+một dòng đó. Giữ API 26, image `google_apis`/`x86_64`, emulator options, lệnh
+`:app:assembleRelease :app:connectedDebugAndroidTest` và hai lớp
+`WalletMigrationTest`, `OfflineFlowTest`. Không bỏ test, không thêm
+`continue-on-error`, không sửa app code hoặc dependency.
+
+| Kiểm tra | Trạng thái |
+| --- | --- |
+| YAML parse/không trùng key, triggers và jobs | PASS — PyYAML BaseLoader với kiểm tra duplicate keys |
+| Diff so với HEAD chỉ bỏ profile; API/image/arch/tests giữ nguyên | PASS — đối chiếu cấu trúc YAML và assertions |
+| `git diff --check` | PASS |
+| Run lỗi đã xác minh từ log | FAIL do cấu hình profile, không phải một lượt test API 26 PASS |
+| CI sau bản sửa | INCOMPLETE — chưa commit/push hoặc chạy lại |
+
+Parser cài trong thư mục tạm ngoài repo, không thêm dependency dự án. Không chạy
+actionlint, Gradle hoặc emulator/instrumentation trong lượt này. Không commit/
+push, rerun workflow hoặc thay dữ liệu AVD. Kết luận phát hành vẫn **Not Ready**;
+chờ run mới của workflow đã sửa để xác nhận API 26 startup/migration và CI.

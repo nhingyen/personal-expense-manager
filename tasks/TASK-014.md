@@ -51,6 +51,12 @@ change is authorized. [The runbook](../docs/SIGNED_UPGRADE_v2_v3.md) defines the
 
 ## Results
 
+Latest CI follow-up (2026-10-28): run 40648694159 / `api26-release-migration`
+failed while selecting `--device Pixel 2`. The working-tree workflow already
+removes that profile override; YAML and unchanged API 26/test configuration are
+verified locally. Remote execution after this fix remains **INCOMPLETE**. See
+the CI profile follow-up at the end of this task.
+
 Latest signed upgrade execution (2026-10-28): **PASS v2 → v3 on the dedicated
 API 35 AVD**, with original/preflight baseline matching before install, successful
 `adb install -r`, both post-install and post-cold-launch data comparisons passing,
@@ -300,3 +306,30 @@ API 26 startup/migration and remote CI remain **INCOMPLETE**; distribution stays
 instrumentation were run in this runtime-only execution. No code/schema changes,
 uninstall, wipe/clear, keystore/password access, commit/push or release publication.
 AVD now retains v3 with the sample data, stopped after the final capture.
+
+## CI profile follow-up — Run 40648694159, 2026-10-28
+
+Read-only `gh run view` confirms [run 40648694159](https://github.com/nhingyen/personal-expense-manager/actions/runs/40648694159)
+failed at HEAD `ebd8ffb0cfd5ba9168f46929a193af5af3ebacc1`; job
+[`api26-release-migration`](https://github.com/nhingyen/personal-expense-manager/actions/runs/40648694159/job/122683442945)
+failed. Its log at 07:14:44Z reports
+`Error: No device found matching --device Pixel 2.` The configured hardware
+profile is unavailable to that runner's avdmanager, so this failure is an AVD
+configuration failure and supplies no API 26 startup/migration pass.
+
+The existing working-tree fix in `.github/workflows/android-ci.yml` removes
+only `profile: Pixel 2` relative to HEAD, allowing the action's default profile.
+Kept that fix without adding another device name. API 26, `google_apis`,
+`x86_64`, emulator options, unsigned Release build, `connectedDebugAndroidTest`,
+`WalletMigrationTest` and `OfflineFlowTest` are unchanged. No test removal,
+`continue-on-error`, app-code or dependency change.
+
+**Local checks: PASS.** Parsed YAML with PyYAML BaseLoader and duplicate-key
+rejection, verified triggers/jobs and equality with HEAD after removing only
+that profile, asserted API/image/architecture/test classes remain intact, and
+ran `git diff --check`. PyYAML was installed in a temporary directory outside
+the repository; this is YAML validation, not an emulator run or actionlint check.
+
+**CI after fix: INCOMPLETE.** No commit/push or rerun was requested or performed.
+The recorded remote run remains FAIL; only a fresh successful run of the fixed
+workflow can close API 26/CI gates. Signed-upgrade API 35 PASS is unaffected.
