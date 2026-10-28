@@ -225,6 +225,68 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun reopeningAddCannotUnlockAnInFlightSaveAndCreateADuplicate() = runTest {
+        runCurrent()
+        repository.addGate = CompletableDeferred()
+        viewModel.startAdd(2)
+        viewModel.setAmount("100")
+        viewModel.setCategory("Food")
+        viewModel.save()
+        runCurrent()
+        val pending = viewModel.uiState.value.form
+        try {
+            // Back and Add can arrive before a slow Room write completes.
+            viewModel.startAdd()
+            viewModel.setAmount("200")
+            viewModel.setCategory("Salary")
+            viewModel.setType(TransactionType.INCOME)
+            viewModel.setDate(LocalDate.of(2024, 2, 29))
+            viewModel.setNote("Changed during save")
+            viewModel.setWallet(3)
+            viewModel.save()
+            runCurrent()
+            assertEquals(pending, viewModel.uiState.value.form)
+            assertEquals(1, repository.addCalls)
+        } finally {
+            repository.addGate!!.complete(Unit)
+            advanceUntilIdle()
+        }
+        assertEquals(1, repository.records.value.size)
+        assertEquals(100L, repository.records.value.single().amountVnd)
+        assertEquals(2L, repository.records.value.single().walletId)
+    }
+
+    @Test
+    fun pendingDeleteKeepsItsRecordAndBlocksSaveEditAndDuplicateDelete() = runTest {
+        val saved = transaction(7, TransactionType.EXPENSE, "Food", LocalDate.of(2026, 10, 19), null)
+        repository.records.value = listOf(saved)
+        runCurrent()
+        repository.deleteGate = CompletableDeferred()
+        viewModel.selectRecord(7)
+        viewModel.deleteSelected()
+        runCurrent()
+        try {
+            viewModel.selectRecord(99)
+            viewModel.startAdd()
+            viewModel.startEdit(7)
+            viewModel.setAmount("200")
+            viewModel.save()
+            viewModel.deleteSelected()
+            runCurrent()
+            assertEquals(7L, viewModel.uiState.value.selectedId)
+            assertEquals("", viewModel.uiState.value.form.amountInput)
+            assertEquals(1, repository.deleteCalls)
+            assertEquals(0, repository.addCalls)
+        } finally {
+            repository.deleteGate!!.complete(Unit)
+            advanceUntilIdle()
+        }
+        assertFalse(viewModel.uiState.value.isDeleting)
+        assertTrue(repository.records.value.isEmpty())
+        assertEquals(TransactionNavigationEvent.DELETED, viewModel.navigationEvents.first())
+    }
+
+    @Test
     fun validSaveOccursOnceAndAppearsInObservedList() = runTest {
         runCurrent()
         repository.addGate = CompletableDeferred()
@@ -299,6 +361,8 @@ class TransactionViewModelTest {
         var addCalls = 0
         var observationCalls = 0
         var addGate: CompletableDeferred<Unit>? = null
+        var deleteGate: CompletableDeferred<Unit>? = null
+        var deleteCalls = 0
         var observationGate: CompletableDeferred<Unit>? = null
         var failObservation = false
         var failWrite = false
@@ -330,6 +394,8 @@ class TransactionViewModelTest {
         }
 
         override suspend fun delete(id: Long): Boolean {
+            deleteCalls++
+            deleteGate?.await()
             if (failWrite) throw IllegalStateException("Write failed")
             if (!deleteResult || records.value.none { it.id == id }) return false
             records.value = records.value.filterNot { it.id == id }

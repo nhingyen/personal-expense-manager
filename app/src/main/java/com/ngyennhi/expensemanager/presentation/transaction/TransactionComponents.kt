@@ -53,9 +53,10 @@ internal fun TypeChip(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Box(
-        modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected }.clickable(onClick = onClick),
+        modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected }.clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Box(

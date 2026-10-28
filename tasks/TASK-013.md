@@ -1,5 +1,11 @@
 # TASK-013: Offline-only v1.0.0
 
+> Current verification is superseded by [TASK-014](TASK-014.md) and the
+> [final audit report](../docs/RELEASE_AUDIT_v1.0.0.md). The audit found the checked-in
+> manifest/extraction rules still enabled default backup despite the historical
+> verification claims below; TASK-014 corrects that configuration and adds packaged
+> policy regression tests. Earlier device/build counts describe earlier runs only.
+
 ## Scope and acceptance criteria
 
 Replace the optional authentication scope from TASK-011/TASK-012 with one local financial profile. Cloud Backup & Restore and Local Multi-account are Future Improvements, not release features.
