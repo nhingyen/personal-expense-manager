@@ -7,6 +7,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.presentation.common.components.MonthSelector
 import com.ngyennhi.expensemanager.presentation.transaction.CategoryIcon
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
 import com.ngyennhi.expensemanager.presentation.transaction.formatMonth
@@ -41,12 +44,16 @@ internal fun HomePanelSheet(
     locale: Locale,
     actions: HomeActions,
     onRetryTransactions: () -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    val blockDismiss by rememberUpdatedState(panel == HomePanel.BUDGET && state.isSavingBudget)
+    ModalBottomSheet(onDismissRequest = { if (!blockDismiss) onDismiss() },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,
+            confirmValueChange = { it != SheetValue.Hidden || !blockDismiss }),
         containerColor = ExpenseManagerColors.background) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
+        Column(Modifier.fillMaxWidth().testTag("home_panel_content").verticalScroll(rememberScrollState()).imePadding()
             .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(when (panel) {
@@ -54,9 +61,27 @@ internal fun HomePanelSheet(
                 HomePanel.CATEGORIES -> R.string.home_categories
                 HomePanel.NOTIFICATIONS -> R.string.home_notifications
             }), style = MaterialTheme.typography.headlineSmall)
-            Text(formatMonth(state.selectedMonth, locale), style = MaterialTheme.typography.labelMedium)
+            if (panel == HomePanel.BUDGET) {
+                MonthSelector(formatMonth(state.selectedMonth, locale), onPreviousMonth, onNextMonth,
+                    enabled = !state.isSavingBudget)
+            } else {
+                Text(formatMonth(state.selectedMonth, locale), style = MaterialTheme.typography.labelMedium)
+            }
             when (panel) {
-                HomePanel.BUDGET -> BudgetEditor(state, actions)
+                HomePanel.BUDGET -> {
+                    if (state.error != null) {
+                        ErrorBanner(stringResource(if (state.error == HomeError.CALCULATION_OVERFLOW)
+                            R.string.home_calculation_error else R.string.home_load_error), onRetryTransactions)
+                    }
+                    if (state.isStale) Text(stringResource(R.string.home_stale_data),
+                        style = MaterialTheme.typography.bodySmall)
+                    MonthlyBudgetOverview(state, locale)
+                    BudgetEditor(state, actions)
+                    TextButton(onClick = onDismiss, enabled = !state.isSavingBudget,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
                 HomePanel.CATEGORIES -> CategoryChooser(state, actions, onDismiss)
                 HomePanel.NOTIFICATIONS -> BudgetNotifications(state, locale, actions.onRetryBudgets, onRetryTransactions)
             }
@@ -80,7 +105,7 @@ private fun BudgetEditor(state: HomeUiState, actions: HomeActions) {
                 supportingText = { if (state.budgetInputInvalid) Text(stringResource(R.string.amount_invalid)) },
                 shape = RoundedCornerShape(14.dp),
             )
-            if (state.budgetSaveFailed) ErrorBanner(stringResource(R.string.home_budget_save_error), actions.onSaveBudget)
+            if (state.budgetSaveFailed) ErrorBanner(stringResource(R.string.home_budget_save_error))
             Button(onClick = actions.onSaveBudget, enabled = !state.isSavingBudget,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp).testTag("home_budget_save")) {
                 Text(stringResource(if (state.isSavingBudget) R.string.saving_transaction else R.string.home_save_budget))

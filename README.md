@@ -1,111 +1,149 @@
 # Personal Expense Manager
 
-An offline Android app that helps users track income, expenses, and monthly spending. Built with **Kotlin**, **Jetpack Compose**, and **Room** as an Android portfolio project.
-
-Users can record daily transactions, set a monthly budget, and understand their spending through charts. No account or internet connection is needed for the core features.
+**v1.0.0 - Offline-only.** An Android portfolio app for tracking income, expenses, wallets and monthly budgets. The app opens directly into Home with one local financial profile.
 
 ## Screenshots
 
-Captured from the running app on a Pixel 5 emulator (Android 15 / API 35), using English and sample data. The app starts with an empty database on a fresh install.
+Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captures are refreshed for the offline release; earlier financial captures retain the same features.
 
-| Home | Transactions | Add transaction | Transaction details |
+| Home | Transactions |  |  |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home.png" width="220" alt="Home with monthly balance, income, expenses, and budget progress"> | <img src="docs/screenshots/transactions.png" width="220" alt="Transaction list with search and income or expense filters"> | <img src="docs/screenshots/add-transaction.png" width="220" alt="Add transaction form with amount, category, date, and note"> | <img src="docs/screenshots/transaction-details.png" width="220" alt="Transaction details with edit and delete actions"> |
+| <img src="docs/screenshots/home.png" width="220" alt="Monthly overview"> | <img src="docs/screenshots/transactions.png" width="220" alt="Transaction list"> |  |  |
 
-| Statistics | Transaction filters | Monthly budget | Categories |
+| Add transaction | Transaction details | Statistics | Transaction filters |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/statistics.png" width="220" alt="Spending by category and six-month income and expense comparison"> | <img src="docs/screenshots/transaction-filters.png" width="220" alt="Transaction filters for category and date range"> | <img src="docs/screenshots/monthly-budget.png" width="220" alt="Monthly spending limit editor"> | <img src="docs/screenshots/categories.png" width="220" alt="Category shortcuts for adding income and expenses"> |
+| <img src="docs/screenshots/add-transaction.png" width="220" alt="Add transaction form"> | <img src="docs/screenshots/transaction-details.png" width="220" alt="Transaction details"> | <img src="docs/screenshots/statistics.png" width="220" alt="Spending charts"> | <img src="docs/screenshots/transaction-filters.png" width="220" alt="Transaction filters"> |
+
+| Monthly budget | Categories | No budget or expenses | Over budget |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/monthly-budget.png" width="220" alt="Monthly spending limit"> | <img src="docs/screenshots/categories.png" width="220" alt="Categories"> | <img src="docs/screenshots/monthly-budget-unset.png" width="220" alt="Monthly budget with no limit or expenses"> | <img src="docs/screenshots/monthly-budget-exceeded.png" width="220" alt="Monthly budget exceeded"> |
+
+| Wallets | Wallet details | Edit wallet | Transaction wallet selection |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/wallets.png" width="220" alt="Wallet balances"> | <img src="docs/screenshots/wallet-details.png" width="220" alt="Wallet details"> | <img src="docs/screenshots/edit-wallet.png" width="220" alt="Edit wallet form"> | <img src="docs/screenshots/transaction-wallet.png" width="220" alt="Choose a wallet for a transaction"> |
+
+| Vietnamese / Light | English / Dark |  |  |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/settings-vi-light.png" width="220" alt="Settings in Vietnamese and light mode"> | <img src="docs/screenshots/settings-en-dark.png" width="220" alt="Settings in English and dark mode"> |  |  |
 
 ## Features
 
-- **Transaction management:** add, view, edit, and delete income or expense records with an amount, category, date, and optional note.
-- **Monthly overview:** see total income, total expenses, net income, and the five most recent transactions for the selected month.
-- **Search and filters:** search notes or categories and combine transaction type, category, and an inclusive date range.
-- **Monthly budget:** save a spending limit for each month, follow expense progress, and view in-app notices when the limit is reached or exceeded.
-- **Statistics:** view expense shares by category and compare income and expenses over six months.
-- **Category shortcuts:** choose a suggested or previously used category to start a new transaction.
-- **Offline storage:** keep transactions in Room and budget limits in local preferences.
-- **Vietnamese and English:** localized labels, dates, and amounts. Vietnamese is the default; Android 13+ supports language selection through system app settings.
+- Add, edit and delete income/expenses with category, date, note and wallet.
+- Manage manual cash, bank and e-wallet balances in VND.
+- View monthly totals, budgets and spending warnings.
+- Search and filter transactions by type, category and date.
+- View category charts and six-month income/expense comparisons.
+- Choose Vietnamese/English and Light/Dark/System appearance.
+- Open and use every financial feature without an account or network.
+
+Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
+
+Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
+
+## Future Improvements
+
+- Cloud Backup & Restore, with explicit ownership, validation and confirmed restoration.
+- Local Multi-account, with separate financial data per profile and a deliberate plan for existing ownerless data.
 
 ## Tech stack
 
-| Area | Tools |
-| --- | --- |
-| Language | Kotlin |
-| UI | Jetpack Compose, Material 3, custom Compose charts |
-| Architecture | MVVM, Clean Architecture, one `:app` module |
-| State and async work | ViewModel, StateFlow, Kotlin Coroutines, Flow |
-| Navigation | Navigation Compose |
-| Local storage | Room for transactions, SharedPreferences for monthly budgets |
-| Dependency injection | Hilt, KSP |
-| Testing | JUnit, Coroutines Test, Compose UI tests, AndroidX Test |
-| Automation | GitHub Actions: debug build, unit tests, and Android Lint |
+Kotlin · Jetpack Compose · Material 3 · Room · Hilt · Coroutines/StateFlow · Navigation Compose.
 
-## Architecture
+MVVM + Clean Architecture in one `:app` module: `presentation → domain ← data`. See [Architecture](docs/ARCHITECTURE.md).
 
-The app separates UI, business rules, and storage inside a single module. Presentation and data both depend on domain; domain is pure Kotlin and has no Android dependencies.
+## Launcher icon
 
-```text
-app/src/main/java/com/ngyennhi/expensemanager/
-├── presentation/   Compose screens, ViewModels, UI state, navigation
-├── domain/         Models, repository interfaces, use cases
-├── data/           Room database, mappers, repository implementations
-├── di/             Hilt modules and application setup
-└── ui/theme/       Shared colors, typography, and Material theme
-```
-
-Room exposes transaction changes as a `Flow`. Repositories map stored records to domain models, ViewModels publish `StateFlow`, and Compose observes state with lifecycle awareness. User actions go back through ViewModels and use cases to update local storage.
-
-Amounts are stored as positive `Long` values in whole VND. Domain rules validate records, calculate totals with overflow checks, and apply filters. Currency formatting belongs to the UI.
-
-Read the [architecture guide](docs/ARCHITECTURE.md) for dependency rules and state handling.
+The purple wallet logo from Image Asset Studio is configured for adaptive icons
+(API 26+) and legacy square/round icons at all five standard densities. On
+2026-10-28, Debug and unsigned Release builds passed with the new resources; the
+installed Debug icon was visually verified in the Pixel 5 / API 35 App Drawer.
+The signed v2 → v3 upgrade also verified the new icon on Home Screen and App
+Drawer on the dedicated API 35 AVD. Other launcher masks and themed icons still
+need manual review. [TASK-015](tasks/TASK-015.md) records the resource inventory;
+the [signed-upgrade report](docs/SIGNED_UPGRADE_v2_v3.md) records the signed v3
+artifact and actual icon replacement after updating.
 
 ## Getting started
 
-### Requirements
+Requires Android Studio supporting **AGP 9.4.1**, **JDK 25**, **SDK 37**, Build Tools **36.0.0**, and an **API 26+** device. Gradle is provided by the wrapper.
 
-- Android Studio with support for Android Gradle Plugin **9.4.1**.
-- Android SDK Platform **37** (`platforms;android-37.0`) and Build Tools **36.0.0**, as used in CI.
-- **JDK 25** for the Gradle daemon. The repository includes a Gradle **9.6.0** wrapper and daemon JVM configuration.
-- An emulator or Android device running **Android 8.0 / API 26** or newer.
+1. Clone the repository and open it in Android Studio.
+2. Set your Android SDK path in local.properties.
+3. Sync Gradle, select `app`, and click **Run**. No service configuration or credentials are required.
 
-### Run the app
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/nhingyen/personal-expense-manager.git
-   cd personal-expense-manager
-   ```
-
-2. Open the project in Android Studio and let Gradle sync finish. Set the local SDK path through Android Studio or an untracked `local.properties` file with `sdk.dir`.
-3. Select the `app` run configuration and an emulator or connected device, then click **Run**.
-4. Use **Add** to create a transaction. Set a spending limit from **Home → Budget** and open **Statistics** to see the recorded data.
-
-To build a debug APK from PowerShell:
+## Build & test
 
 ```powershell
-.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
 ```
 
-The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. The first build needs internet access to download build tools and dependencies.
-
-## Testing
-
-Run the debug build, local unit tests, and lint:
+For the offline launch regression on a connected emulator, install updates without clearing storage:
 
 ```powershell
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleDebugAndroidTest
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb shell am instrument -w -e class com.ngyennhi.expensemanager.presentation.OfflineFlowTest com.ngyennhi.expensemanager.test/com.ngyennhi.expensemanager.HiltTestRunner
 ```
 
-With an emulator or device connected, run instrumented tests:
+The regression uses isolated test storage. For an existing installation, keep the application ID and signing key, use `adb install -r`, and do not uninstall or clear app storage. Room stays at schema v2 with database `expense_manager.db`; budgets keep `monthly_budgets` and their existing keys. [TASK-013](tasks/TASK-013.md) records release checks and the manual emulator checklist.
 
-```powershell
-.\gradlew.bat :app:connectedDebugAndroidTest
-```
+On macOS/Linux, use `sh ./gradlew`. Debug APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
-On macOS or Linux, replace `.\gradlew.bat` with `./gradlew` (or `bash ./gradlew`).
+Automatic Gradle release signing is **not configured**. `assembleRelease` produces
+`app/build/outputs/apk/release/app-release-unsigned.apk`; a successful build does
+not make that APK installable or ready for distribution. Use the intended release
+key and verify an in-place signed upgrade before publishing. Android Studio can
+sign an APK separately. The signed versionCode 2 APK has been verified and
+archived read-only under `app/release/upgrade-verification/v2/` (ignored by Git).
+Current source is versionCode **3**, versionName **1.0.0**; its unsigned Release
+build passed with the new launcher icon. The supplied signed v3 APK verifies
+with the same Release certificate; its dedicated API 35 in-place upgrade passed. The
+[v2 → v3 runbook](docs/SIGNED_UPGRADE_v2_v3.md) uses a dedicated AVD and data
+snapshots; never run instrumentation on the data-retention AVD. Verification
+does not require sharing a keystore or signing passwords.
 
-Tests cover transaction validation, monthly totals, budgets, filtering, statistics, ViewModel state, Room persistence, and key Compose flows. Local HTML reports are generated under `app/build/reports/`. [Android CI](.github/workflows/android-ci.yml) runs the build, unit tests, and lint for pull requests and pushes to `main` and `develop`; device tests run separately.
+The signed-upgrade execution confirmed v2 still matched the saved baseline before
+installing v3 with `adb install -r`. Comparisons immediately after install and
+after cold launch both passed: three wallets, three transactions, all Room
+IDs/relationships/schema/sequences/balances and budget/theme/locale retained.
+UI values and the new icon on Home Screen/App Drawer passed. The AVD now retains
+v3 and its sample data. The snapshot tool's seven host checks were run during
+preparation; earlier app test counts below are historical.
 
-For local development, enable the tracked Git hooks with `git config core.hooksPath .githooks`. See [repository guidance](AGENTS.md) and the [PR checklist](.github/pull_request_template.md) for the contribution workflow.
+Enable the tracked local hooks once per clone with
+`git config core.hooksPath .githooks`. Pre-commit checks staged whitespace and unit
+tests; pre-push runs Debug build and lint. CI runs Debug and unsigned Release
+builds, unit tests and lint on PRs and pushes to `main`/`develop`; a separate API
+26 emulator job runs the startup and Room migration instrumentation tests. These
+new workflow gates are configured locally but have no remote result until the
+workflow is pushed and runs. [Remote CI run 40480894011](https://github.com/nhingyen/personal-expense-manager/actions/runs/40480894011)
+passed at HEAD `90d39062` using the earlier Debug/unit/lint-only workflow.
+
+The current final audit is tracked in [TASK-014](tasks/TASK-014.md) and
+[the release audit report](docs/RELEASE_AUDIT_v1.0.0.md). Historical TASK-013 results
+are kept separately; the audit report records current-source results and remaining
+release gates. The signed-upgrade gate passed on API 35; API 26 runtime and the
+remaining CI/manual checks are still required before distribution.
+
+Earlier app checks recorded in TASK-014: Debug/unsigned Release build passed; a fresh unit execution passed
+98 tests; lint has 0 errors, 14 warnings and 1 hint. After adjusting the System
+Theme test to avoid PixelCopy during a system night-mode change, the full API 35
+instrumentation suite passed **63/63 continuously in 527.54 seconds**. An earlier
+full run also passed 63/63 in 245.229 seconds; prior PixelCopy and ANR interruptions
+remain documented. The ANR's root cause is still unknown. Room/budget/appearance
+snapshots matched after the current run (SHA-256
+`25d01cc3b8ac7857270f7665e93aa61d1fb2836f83546132a83292eecf6c070e`) and through
+the earlier verification and offline Debug cold launch.
+Additional API 26 AVD attempts with WHPX and varied encryption/data-partition
+settings still did not complete boot; no app install or migration test ran there.
+The new CI job targets API 26 for an isolated startup/migration run but remains
+unverified remotely.
+The audit remains **Not Ready for
+distribution**: API 26 runtime/upgrade, remote CI and the remaining manual checks
+are outstanding. Signed v3 verification/upgrade passed on API 35. No keystore/password changes,
+commit/push or release publication were performed.
+
+## Documentation
+
+[Project](docs/PROJECT.md) · [Design](docs/DESIGN.md) · [Roadmap](tasks/ROADMAP.md) · [Contributing](AGENTS.md) · [CI](.github/workflows/android-ci.yml)

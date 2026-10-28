@@ -16,3 +16,9 @@ local.properties
 
 # Android Studio
 .idea/
+
+# Keep obsolete local service credentials out of version control.
+/app/google-services.json
+
+# Android Studio signed APK output stays local.
+/app/release/

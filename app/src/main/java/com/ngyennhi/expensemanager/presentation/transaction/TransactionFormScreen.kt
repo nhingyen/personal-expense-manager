@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.presentation.transaction
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -72,16 +75,20 @@ internal fun TransactionFormScreen(
     onDateChange: (LocalDate) -> Unit,
     onNoteChange: (String) -> Unit,
     onSave: () -> Unit,
+    walletState: com.ngyennhi.expensemanager.presentation.wallet.WalletUiState? = null,
+    onWalletChange: (Long) -> Unit = {},
+    onRetryWallets: () -> Unit = {},
 ) {
     val form = state.form
+    BackHandler(enabled = form.isSaving) { /* Wait for the confirmed write result. */ }
     val locale = LocalConfiguration.current.locales[0]
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showCategories by remember { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showCategories by rememberSaveable { mutableStateOf(false) }
     val vndSuffix = stringResource(R.string.vnd_suffix)
     Scaffold(
         containerColor = ExpenseManagerColors.background,
         topBar = { AppTopBar(stringResource(if (form.editingId == null) R.string.add_transaction_title
-            else R.string.edit_transaction_title), onBack = onBack) },
+            else R.string.edit_transaction_title), onBack = { if (!form.isSaving) onBack() }) },
     ) { padding ->
         when {
             form.editingId != null && state.loadStatus == LoadStatus.LOADING && !form.initialized ->
@@ -98,9 +105,9 @@ internal fun TransactionFormScreen(
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TypeChip(stringResource(R.string.type_expense), form.type == TransactionType.EXPENSE,
-                        { onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f), enabled = !form.isSaving)
                     TypeChip(stringResource(R.string.type_income), form.type == TransactionType.INCOME,
-                        { onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f), enabled = !form.isSaving)
                 }
                 Column {
                     Surface(color = ExpenseManagerColors.primaryContainer, shape = RoundedCornerShape(20.dp),
@@ -112,6 +119,7 @@ internal fun TransactionFormScreen(
                             BasicTextField(
                                 value = form.amountInput,
                                 onValueChange = onAmountChange,
+                                enabled = !form.isSaving,
                                 modifier = Modifier.fillMaxWidth().testTag("amount_input"),
                                 singleLine = true,
                                 textStyle = MaterialTheme.typography.displaySmall.copy(
@@ -142,16 +150,17 @@ internal fun TransactionFormScreen(
                         OutlinedTextField(
                             value = form.category,
                             onValueChange = onCategoryChange,
+                            enabled = !form.isSaving,
                             modifier = Modifier.fillMaxWidth().testTag("category_input"),
                             placeholder = { Text(stringResource(R.string.category_hint)) },
                             leadingIcon = { CategoryIcon(form.category.ifBlank {
                                 if (form.type == TransactionType.EXPENSE) "Food" else "Salary"
                             }, form.type, 36.dp) },
                             trailingIcon = {
-                                IconButton(onClick = { showCategories = true },
+                                IconButton(onClick = { showCategories = true }, enabled = !form.isSaving,
                                     modifier = Modifier.testTag("choose_category_button")) {
                                     Image(painterResource(R.drawable.ic_chevron_down),
-                                        stringResource(R.string.choose_category), Modifier.size(20.dp))
+                                        stringResource(R.string.choose_category), Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                                 }
                             },
                             singleLine = true,
@@ -176,18 +185,18 @@ internal fun TransactionFormScreen(
                         color = ExpenseManagerColors.textSecondary)
                     Spacer(Modifier.height(8.dp))
                     Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("date_input").clickable(enabled = !form.isSaving) { showDatePicker = true },
                         color = ExpenseManagerColors.surface,
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseManagerColors.outline),
                     ) {
                         Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Image(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(22.dp))
+                            Image(painterResource(R.drawable.ic_calendar), contentDescription = null, modifier = Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                             Text(formatDate(form.date, locale), modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.bodyMedium)
                             Image(painterResource(R.drawable.ic_chevron_down), contentDescription = stringResource(R.string.pick_date),
-                                modifier = Modifier.size(18.dp))
+                                modifier = Modifier.size(18.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                         }
                     }
                 }
@@ -198,12 +207,16 @@ internal fun TransactionFormScreen(
                     OutlinedTextField(
                         value = form.note,
                         onValueChange = onNoteChange,
+                        enabled = !form.isSaving,
                         modifier = Modifier.fillMaxWidth().testTag("note_input"),
                         placeholder = { Text(stringResource(R.string.note_hint)) },
                         minLines = 3,
                         shape = RoundedCornerShape(14.dp),
                         supportingText = { Text(stringResource(R.string.note_count, form.note.length)) },
                     )
+                }
+                walletState?.let {
+                    com.ngyennhi.expensemanager.presentation.wallet.WalletPicker(it, form.walletId, !form.isSaving, onWalletChange, onRetryWallets)
                 }
                 when (state.actionError) {
                     ActionError.SAVE_FAILED -> ErrorBanner(stringResource(R.string.save_failed), onSave)
@@ -212,12 +225,13 @@ internal fun TransactionFormScreen(
                 }
                 Button(
                     onClick = onSave,
-                    enabled = !form.isSaving,
+                    enabled = !form.isSaving && (walletState == null || walletState.status == LoadStatus.READY &&
+                        walletState.wallets.any { it.id == form.walletId }),
                     modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_transaction_button"),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primary),
                 ) {
-                    Image(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(20.dp))
+                    Image(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(MaterialTheme.colorScheme.onPrimary))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(if (form.isSaving) R.string.saving_transaction else R.string.save_transaction))
                 }

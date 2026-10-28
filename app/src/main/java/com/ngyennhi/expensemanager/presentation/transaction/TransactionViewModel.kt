@@ -90,13 +90,13 @@ class TransactionViewModel @Inject constructor(
             selectedCategory = null, dateRange = null)
     }
 
-    fun selectRecord(id: Long) = update { it.copy(selectedId = id, actionError = null) }
+    fun selectRecord(id: Long) = edit { it.copy(selectedId = id, actionError = null) }
 
-    fun startAdd() = update {
-        it.copy(form = TransactionFormState(date = LocalDate.now()), selectedId = null, actionError = null)
+    fun startAdd(walletId: Long = com.ngyennhi.expensemanager.domain.model.DEFAULT_WALLET_ID) = edit {
+        it.copy(form = TransactionFormState(date = LocalDate.now(), walletId = walletId), selectedId = null, actionError = null)
     }
 
-    fun startEdit(id: Long) = update { state ->
+    fun startEdit(id: Long) = edit { state ->
         val record = state.transactions.firstOrNull { it.id == id }
         state.copy(
             selectedId = id,
@@ -105,25 +105,27 @@ class TransactionViewModel @Inject constructor(
         )
     }
 
-    fun setType(value: TransactionType) = update { it.copy(form = it.form.copy(type = value), actionError = null) }
+    fun setType(value: TransactionType) = edit { it.copy(form = it.form.copy(type = value), actionError = null) }
 
-    fun setAmount(value: String) = update {
+    fun setAmount(value: String) = edit {
         it.copy(form = it.form.copy(amountInput = value, amountError = null), actionError = null)
     }
 
-    fun setCategory(value: String) = update {
+    fun setCategory(value: String) = edit {
         it.copy(form = it.form.copy(category = value, categoryError = null), actionError = null)
     }
 
-    fun setDate(value: LocalDate) = update { it.copy(form = it.form.copy(date = value), actionError = null) }
+    fun setDate(value: LocalDate) = edit { it.copy(form = it.form.copy(date = value), actionError = null) }
 
-    fun setNote(value: String) = update { it.copy(form = it.form.copy(note = value.take(200)), actionError = null) }
+    fun setNote(value: String) = edit { it.copy(form = it.form.copy(note = value.take(200)), actionError = null) }
+
+    fun setWallet(value: Long) = edit { it.copy(form = it.form.copy(walletId = value), actionError = null) }
 
     fun clearActionError() = update { it.copy(actionError = null) }
 
     fun save() {
         val state = mutableState.value
-        if (state.form.isSaving || state.form.editingId != null && state.editRecordMissing) return
+        if (state.form.isSaving || state.isDeleting || state.form.editingId != null && state.editRecordMissing) return
 
         val form = state.form
         val amount = form.amountInput.trim().takeIf { it.isNotEmpty() && it.all(Char::isDigit) }?.toLongOrNull()
@@ -145,13 +147,13 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val draft = TransactionDraft(form.type, validAmount, form.category.trim(), form.date,
-                    form.note.trim().ifEmpty{ null })
+                    form.note.trim().ifEmpty{ null }, form.walletId)
                 val saved = if (form.editingId == null) {
                     addTransaction(draft)
                     true
                 } else {
                     updateTransaction(Transaction(form.editingId, draft.type, draft.amountVnd,
-                        draft.category, draft.date, draft.note))
+                        draft.category, draft.date, draft.note, draft.walletId))
                 }
                 if (saved) {
                     update { it.copy(selectedMonth = YearMonth.from(form.date)) }
@@ -170,7 +172,7 @@ class TransactionViewModel @Inject constructor(
 
     fun deleteSelected() {
         val state = mutableState.value
-        if (state.isDeleting) return
+        if (state.isDeleting || state.form.isSaving) return
         val id = state.selectedId ?: return
         update { it.copy(isDeleting = true, actionError = null) }
         viewModelScope.launch {
@@ -185,6 +187,10 @@ class TransactionViewModel @Inject constructor(
                 update { it.copy(isDeleting = false) }
             }
         }
+    }
+
+    private fun edit(block: (TransactionUiState) -> TransactionUiState) {
+        if (!mutableState.value.form.isSaving && !mutableState.value.isDeleting) update(block)
     }
 
     private fun update(block: (TransactionUiState) -> TransactionUiState) {
@@ -206,5 +212,6 @@ class TransactionViewModel @Inject constructor(
         category = category,
         date = date,
         note = note.orEmpty(),
+        walletId = walletId,
     )
 }

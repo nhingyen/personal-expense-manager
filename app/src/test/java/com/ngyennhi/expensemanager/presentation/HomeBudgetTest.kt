@@ -34,8 +34,9 @@ class HomeBudgetTest {
     }
     @Before fun setUp() { Dispatchers.setMain(dispatcher) }
     @After fun tearDown() { store.clear(); Dispatchers.resetMain() }
-    private fun model() = HomeViewModel(ObserveTransactionsUseCase(transactions), CalculateMonthlySummaryUseCase(),
-        SavedStateHandle(mapOf("dashboard_selected_month" to month.toString())), ObserveMonthlyBudgetsUseCase(budgets),
+    private fun model(handle: SavedStateHandle = SavedStateHandle(mapOf("dashboard_selected_month" to month.toString()))) =
+        HomeViewModel(ObserveTransactionsUseCase(transactions), CalculateMonthlySummaryUseCase(),
+        handle, ObserveMonthlyBudgetsUseCase(budgets),
         SaveMonthlyBudgetUseCase(budgets), CalculateMonthlyBudgetUseCase()).also { store.put("home", it) }
 
     @Test fun loadingUnsetAndConfiguredLimitsAreDistinctAndReactToExpenseUpdates() = runTest(dispatcher) {
@@ -147,5 +148,119 @@ class HomeBudgetTest {
         model.retryObservation(); runCurrent()
         assertFalse(model.uiState.value.isStale)
         assertEquals(150L, model.uiState.value.budget?.spentVnd)
+    }
+
+    @Test fun editingReplacesOnlySelectedMonthAndRemovingDoesNotTouchOtherMonths() = runTest(dispatcher) {
+        budgets.limits.value = mapOf(month to 100L, month.plusMonths(1) to 300L)
+        val model = model(); runCurrent()
+        model.startBudgetEdit()
+        assertEquals("100", model.uiState.value.budgetInput)
+        model.setBudgetInput("200"); model.saveMonthlyBudget(); runCurrent()
+        assertEquals(200L, model.uiState.value.budget?.remainingVnd)
+        assertEquals(mapOf(month to 200L, month.plusMonths(1) to 300L), budgets.limits.value)
+        model.clearMonthlyBudget(); runCurrent()
+        assertEquals(mapOf(month.plusMonths(1) to 300L), budgets.limits.value)
+        assertNull(model.uiState.value.budget)
+    }
+
+    @Test fun switchingMonthsDiscardsDraftErrorsAndReopeningRestoresSavedLimitWithoutWriting() = runTest(dispatcher) {
+        budgets.limits.value = mapOf(month to 100L, month.plusMonths(1) to 300L)
+        val model = model(); runCurrent()
+        model.startBudgetEdit(); model.setBudgetInput("bad"); model.saveMonthlyBudget()
+        assertTrue(model.uiState.value.budgetInputInvalid)
+        model.changeMonth(1)
+        assertEquals("300", model.uiState.value.budgetInput)
+        assertFalse(model.uiState.value.budgetInputInvalid)
+        model.setBudgetInput("999")
+        model.startBudgetEdit() // Reopening after dismiss/cancel discards unsaved edits.
+        assertEquals("300", model.uiState.value.budgetInput)
+        model.changeMonth(1)
+        assertEquals("", model.uiState.value.budgetInput)
+        model.changeMonth(-2)
+        assertEquals("100", model.uiState.value.budgetInput)
+        assertEquals(0, budgets.writes)
+    }
+
+    @Test fun delayedLimitsPrefillEditorWithoutOverwritingAUserDraft() = runTest(dispatcher) {
+        budgets.gate = CompletableDeferred()
+        budgets.limits.value = mapOf(month to 100L)
+        val model = model(); runCurrent()
+        model.startBudgetEdit()
+        budgets.gate!!.complete(Unit); runCurrent()
+        assertEquals("100", model.uiState.value.budgetInput)
+        model.setBudgetInput("250")
+        budgets.limits.value = mapOf(month to 150L); runCurrent()
+        assertEquals("250", model.uiState.value.budgetInput)
+        assertEquals(150L, model.uiState.value.budgetLimitVnd)
+        model.startBudgetEdit()
+        assertEquals("150", model.uiState.value.budgetInput)
+    }
+
+    @Test fun inFlightWriteBlocksMonthAndDraftChangesAndWritesOriginalMonthOnce() = runTest(dispatcher) {
+        budgets.writeGate = CompletableDeferred()
+        val model = model(); runCurrent()
+        model.startBudgetEdit(); model.setBudgetInput("200"); model.saveMonthlyBudget(); runCurrent()
+        model.changeMonth(1); model.setBudgetInput("0"); model.startBudgetEdit()
+        model.saveMonthlyBudget(); model.clearMonthlyBudget(); runCurrent()
+        assertEquals(month, model.uiState.value.selectedMonth)
+        assertEquals("200", model.uiState.value.budgetInput)
+        assertFalse(model.uiState.value.budgetInputInvalid)
+        assertEquals(1, budgets.writes)
+        budgets.writeGate!!.complete(Unit); runCurrent()
+        assertEquals(mapOf(month to 200L), budgets.limits.value)
+        assertFalse(model.uiState.value.isSavingBudget)
+        model.changeMonth(1)
+        assertEquals("", model.uiState.value.budgetInput)
+        assertNull(model.uiState.value.budget)
+    }
+
+    @Test fun failedRemovalCanRetryRemovalAndNeverReportsSuccessOrChangesAnotherMonth() = runTest(dispatcher) {
+        budgets.limits.value = mapOf(month to 100L, month.plusMonths(1) to 300L)
+        val model = model(); runCurrent()
+        model.startBudgetEdit(); budgets.failWrite = true
+        model.clearMonthlyBudget(); runCurrent()
+        assertTrue(model.uiState.value.budgetSaveFailed)
+        assertEquals(100L, model.uiState.value.budgetLimitVnd)
+        assertEquals(0, model.uiState.value.budgetSaveVersion)
+        budgets.failWrite = false
+        model.clearMonthlyBudget(); runCurrent()
+        assertFalse(model.uiState.value.budgetSaveFailed)
+        assertEquals(1, model.uiState.value.budgetSaveVersion)
+        assertEquals(mapOf(month.plusMonths(1) to 300L), budgets.limits.value)
+    }
+
+    @Test fun retryFailureInvalidatesCachedLimitsAndRecoversWithFreshMonthValues() = runTest(dispatcher) {
+        budgets.limits.value = mapOf(month to 100L)
+        val model = model(); runCurrent()
+        budgets.failObservation = true
+        model.retryBudgets(); runCurrent()
+        assertEquals(HomeLoadStatus.ERROR, model.uiState.value.budgetLoadStatus)
+        assertNull(model.uiState.value.budgetLimitVnd)
+        model.changeMonth(1)
+        budgets.limits.value = mapOf(month.plusMonths(1) to 500L)
+        budgets.failObservation = false
+        model.retryBudgets(); runCurrent()
+        assertEquals("500", model.uiState.value.budgetInput)
+        assertEquals(500L, model.uiState.value.budget?.remainingVnd)
+        assertEquals(1, budgets.maxActive)
+    }
+
+    @Test fun restoredMonthUsesItsOwnLimitAndSpendingAcrossYearBoundary() = runTest(dispatcher) {
+        val handle = SavedStateHandle(mapOf("dashboard_selected_month" to "2026-12"))
+        val december = YearMonth.of(2026, 12)
+        val january = december.plusMonths(1)
+        budgets.limits.value = mapOf(december to 100L, january to 300L)
+        records.value = listOf(Transaction(1, TransactionType.EXPENSE, 150, "Food", january.atDay(1), null))
+        val original = model(handle); runCurrent()
+        original.changeMonth(1)
+        val savedMonth = handle.get<String>("dashboard_selected_month")
+        assertEquals("2027-01", savedMonth)
+        store.clear(); runCurrent()
+        val restored = model(SavedStateHandle(mapOf("dashboard_selected_month" to savedMonth)))
+        runCurrent()
+        assertEquals(january, restored.uiState.value.selectedMonth)
+        assertEquals(150L, restored.uiState.value.budget?.remainingVnd)
+        assertEquals("300", restored.uiState.value.budgetInput)
+        assertEquals(1, budgets.maxActive)
     }
 }

@@ -47,6 +47,7 @@ import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.presentation.common.components.MonthSelector
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -70,7 +71,7 @@ internal fun TransactionListScreen(
         topBar = {
             AppTopBar(stringResource(R.string.transactions_title), action = {
                 IconButton(onClick = { showFilters = true }, modifier = Modifier.testTag("open_transaction_filters")) {
-                    Image(painterResource(R.drawable.ic_filter), stringResource(R.string.transaction_filters), Modifier.size(22.dp))
+                    Image(painterResource(R.drawable.ic_filter), stringResource(R.string.transaction_filters), Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                 }
             })
         },
@@ -81,7 +82,7 @@ internal fun TransactionListScreen(
                     modifier = Modifier.testTag("add_transaction_button"),
                     containerColor = ExpenseManagerColors.primary,
                     contentColor = ExpenseManagerColors.surface,
-                    icon = { Image(painterResource(R.drawable.ic_plus), contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    icon = { Image(painterResource(R.drawable.ic_plus), contentDescription = null, modifier = Modifier.size(22.dp), colorFilter = appearanceIconFilter(MaterialTheme.colorScheme.onPrimary)) },
                     text = { Text(stringResource(R.string.add_transaction)) },
                 )
             }
@@ -99,7 +100,7 @@ internal fun TransactionListScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Image(painterResource(R.drawable.ic_search), contentDescription = null, modifier = Modifier.size(22.dp))
+                Image(painterResource(R.drawable.ic_search), contentDescription = null, modifier = Modifier.size(22.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
                 BasicTextField(
                     value = state.query,
                     onValueChange = onQueryChange,

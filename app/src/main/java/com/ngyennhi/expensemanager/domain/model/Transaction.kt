@@ -9,6 +9,7 @@ data class Transaction(
     val category: String,
     val date: LocalDate,
     val note: String?,
+    val walletId: Long = DEFAULT_WALLET_ID,
 )
 
 data class TransactionDraft(
@@ -17,4 +18,5 @@ data class TransactionDraft(
     val category: String,
     val date: LocalDate,
     val note: String?,
+    val walletId: Long = DEFAULT_WALLET_ID,
 )

@@ -66,7 +66,7 @@ class TransactionHiltTest {
         @Provides
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context): ExpenseManagerDatabase =
-            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
 
         @Provides
         fun provideDao(database: ExpenseManagerDatabase): TransactionDao = database.transactionDao()

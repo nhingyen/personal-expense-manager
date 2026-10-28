@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
@@ -206,6 +207,7 @@ class HomeScreenStateTest {
             val localized = context.createConfigurationContext(configuration)
             CompositionLocalProvider(
                 LocalContext provides localized,
+                LocalResources provides localized.resources,
                 LocalConfiguration provides configuration,
                 LocalDensity provides Density(LocalDensity.current.density, configuration.fontScale),
             ) {

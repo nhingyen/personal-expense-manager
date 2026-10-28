@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -125,7 +126,7 @@ class HomeFlowTest {
             composeRule.onNodeWithTag("nav_statistics").performClick().assertIsSelected()
             composeRule.onNodeWithTag("statistics_screen").assertExists()
             composeRule.onNodeWithTag("nav_settings").performClick().assertIsSelected()
-            composeRule.onNodeWithTag("settings_placeholder").assertExists()
+            composeRule.onNodeWithTag("settings_wallets").assertExists()
             composeRule.onNodeWithTag("nav_home").assertIsNotSelected().performClick().assertIsSelected()
             composeRule.onNodeWithTag("nav_transactions").performClick().performClick()
             composeRule.onNodeWithTag("transaction_search").assertTextEquals("Coffee")
@@ -253,10 +254,10 @@ class HomeFlowTest {
         val id = seed()
         openRecent(id)
         composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("app_bottom_bar").assertDoesNotExist()
         composeRule.runOnIdle { transactions.setAmount("200") }
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         awaitRows(1)
         composeRule.onNodeWithTag("nav_transactions").assertIsSelected()
         Espresso.pressBack()
@@ -299,6 +300,54 @@ class HomeFlowTest {
     }
 
     @Test
+    fun budgetSheetSelectsMonthEditsAndCancelsWithoutMixingLimits() {
+        val initialMonth = home.uiState.value.selectedMonth
+        val id = seed()
+        composeRule.onNodeWithTag("home_budget_shortcut").performScrollTo().performClick()
+        composeRule.onNodeWithTag("budget_overview_progress").assertDoesNotExist()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("100")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.limitReached == true && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("budget_warning").assertTextEquals(composeRule.activity.getString(R.string.home_budget_reached))
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("999")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("month_next").performScrollTo().performClick()
+        assertEquals(initialMonth.plusMonths(1), home.uiState.value.selectedMonth)
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.budget_no_expenses)).assertExists()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("300")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.remainingVnd == 300L && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("month_previous").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("100")))
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("200")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("home_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.budget?.remainingVnd == 100L && !home.uiState.value.isSavingBudget }
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").performTextClearance()
+        composeRule.onNodeWithTag("home_budget_input").performTextInput("500")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.cancel)).performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("home_budget_input").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("200")))
+        Espresso.pressBack()
+        composeRule.activityRule.scenario.recreate(); awaitReady()
+        assertEquals(initialMonth, home.uiState.value.selectedMonth)
+        assertEquals(200L, home.uiState.value.budgetLimitVnd)
+        assertEquals(id, runBlocking { repository.observeTransactions().first().single().id })
+    }
+
+    @Test
     fun categoryShortcutReusesSuggestionsAndOpensPrefilledAddWithoutWritingOnCancel() {
         composeRule.onNodeWithTag("home_categories_shortcut").performScrollTo().performClick()
         val category = composeRule.activity.getString(R.string.category_coffee)
@@ -319,7 +368,7 @@ class HomeFlowTest {
         composeRule.onNodeWithTag("amount_input").performTextInput("85000")
         composeRule.onNodeWithTag("category_input").performTextInput("Food")
         Espresso.closeSoftKeyboard()
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         awaitRows(1)
         composeRule.onNodeWithTag("transactions_screen").assertExists()
         Espresso.pressBack()
@@ -336,14 +385,14 @@ class HomeFlowTest {
         val month = home.uiState.value.selectedMonth
         val id = seed(month.atDay(15))
         openRecent(id)
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         // Use the existing event handlers for type/date; TASK-003 covers form widgets.
         composeRule.runOnIdle {
             transactions.setAmount("250000")
             transactions.setType(TransactionType.INCOME)
             transactions.setDate(month.plusMonths(1).atDay(1))
         }
-        composeRule.onNodeWithTag("save_transaction_button").performClick()
+        composeRule.onNodeWithTag("save_transaction_button").performScrollTo().performClick()
         composeRule.waitUntil(5_000) { home.uiState.value.isEmpty }
         composeRule.onNodeWithTag("transactions_screen").assertExists()
         assertEquals(month.plusMonths(1), transactions.uiState.value.selectedMonth)
@@ -361,10 +410,10 @@ class HomeFlowTest {
     fun directHomeDeleteAndCancelWorkWithoutPreviousListEntry() {
         val id = seed()
         openRecent(id)
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.cancel)).performClick()
         assertEquals(1, runBlocking { repository.observeTransactions().first().size })
-        composeRule.onNodeWithTag("delete_transaction_button").performClick()
+        composeRule.onNodeWithTag("delete_transaction_button").performScrollTo().performClick()
         composeRule.onNodeWithTag("confirm_delete_button").performClick()
         awaitRows(0)
         composeRule.onNodeWithTag("transactions_screen").assertExists()
@@ -397,7 +446,7 @@ class HomeFlowTest {
         assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
         val id = seed()
         openRecent(id)
-        composeRule.onNodeWithTag("edit_transaction_button").performClick()
+        composeRule.onNodeWithTag("edit_transaction_button").performScrollTo().performClick()
         composeRule.runOnIdle { transactions.setAmount("999") }
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
         composeRule.onNodeWithTag("edit_transaction_button").assertExists()
@@ -478,7 +527,7 @@ class HomeFlowTest {
     object TestDatabaseModule {
         @Provides @Singleton
         fun database(@ApplicationContext context: Context): ExpenseManagerDatabase =
-            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).build()
+            Room.inMemoryDatabaseBuilder(context, ExpenseManagerDatabase::class.java).addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET).build()
         @Provides fun dao(database: ExpenseManagerDatabase): TransactionDao = database.transactionDao()
 
         @Provides @Singleton

@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.presentation.transaction
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
 
 @Composable
@@ -52,13 +54,17 @@ internal fun TransactionDetailScreen(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onRetry: () -> Unit,
+    walletLabel: String? = null,
+    walletLoadFailed: Boolean = false,
+    onRetryWallets: () -> Unit = {},
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val record = state.selectedRecord
+    BackHandler(enabled = state.isDeleting) { /* Wait for the confirmed delete result. */ }
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(
         containerColor = ExpenseManagerColors.background,
-        topBar = { AppTopBar(stringResource(R.string.transaction_detail_title), onBack = onBack) },
+        topBar = { AppTopBar(stringResource(R.string.transaction_detail_title), onBack = { if (!state.isDeleting) onBack() }) },
     ) { padding ->
         when {
             state.loadStatus == LoadStatus.LOADING && record == null ->
@@ -93,6 +99,10 @@ internal fun TransactionDetailScreen(
                         DetailField(stringResource(R.string.transaction_category), record.category)
                         HorizontalDivider(color = ExpenseManagerColors.outline)
                         DetailField(stringResource(R.string.transaction_date), formatDate(record.date, locale))
+                        walletLabel?.let {
+                            HorizontalDivider(color = ExpenseManagerColors.outline)
+                            DetailField(stringResource(R.string.wallet_label), it)
+                        }
                     }
                 }
                 if (!record.note.isNullOrBlank()) {
@@ -105,6 +115,7 @@ internal fun TransactionDetailScreen(
                         }
                     }
                 }
+                if (walletLoadFailed) ErrorBanner(stringResource(R.string.wallet_read_error), onRetryWallets)
                 if (state.loadStatus == LoadStatus.ERROR) ErrorBanner(stringResource(R.string.load_transactions_error), onRetry)
                 when (state.actionError) {
                     ActionError.DELETE_FAILED -> ErrorBanner(stringResource(R.string.delete_failed), { confirmDelete = true })
@@ -114,11 +125,12 @@ internal fun TransactionDetailScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = onEdit,
+                        enabled = !state.isDeleting,
                         modifier = Modifier.weight(1f).height(50.dp).testTag("edit_transaction_button"),
                         colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primaryContainer,
                             contentColor = ExpenseManagerColors.primaryText),
                     ) {
-                        Image(painterResource(R.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Image(painterResource(R.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.edit_transaction))
                     }
@@ -129,7 +141,7 @@ internal fun TransactionDetailScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.expenseContainer,
                             contentColor = ExpenseManagerColors.expense),
                     ) {
-                        Image(painterResource(R.drawable.ic_trash), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Image(painterResource(R.drawable.ic_trash), contentDescription = null, modifier = Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.expense))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(if (state.isDeleting) R.string.deleting_transaction else R.string.delete_transaction))
                     }
@@ -161,6 +173,6 @@ private fun DetailField(label: String, value: String) {
     Row(Modifier.fillMaxWidth().heightIn(min = 54.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
             color = ExpenseManagerColors.textSecondary)
-        Text(value, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End)
+        Text(value, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End)
     }
 }

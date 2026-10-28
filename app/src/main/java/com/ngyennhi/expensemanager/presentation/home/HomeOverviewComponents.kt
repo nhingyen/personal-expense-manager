@@ -23,9 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.presentation.transaction.ErrorBanner
+import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
-import java.math.BigDecimal
-import java.math.BigInteger
 import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -82,7 +81,7 @@ private fun HomeShortcut(label: String, icon: Int, color: Color, onClick: () -> 
         Row(Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(icon), null, Modifier.size(20.dp))
+            Image(painterResource(icon), null, Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.primary))
             Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
@@ -108,7 +107,7 @@ internal fun HomeBudgetCard(state: HomeUiState, locale: Locale, onOpen: () -> Un
                         color = ExpenseManagerColors.primary)
                 }
                 state.budget?.let { budget ->
-                    val percent = NumberFormat.getPercentInstance(locale).format(BigDecimal(budget.usedPercent, 2))
+                    val percent = budgetPercent(budget, locale)
                     Text(stringResource(R.string.home_budget_used, percent), style = MaterialTheme.typography.bodySmall,
                         color = ExpenseManagerColors.primary,
                         modifier = Modifier.widthIn(max = 160.dp).testTag("home_budget_percentage"))
@@ -127,19 +126,14 @@ internal fun HomeBudgetCard(state: HomeUiState, locale: Locale, onOpen: () -> Un
                         color = ExpenseManagerColors.textSecondary)
                 else -> {
                     val budget = state.budget
-                    val over = budget.remainingVnd < 0
-                    val color = if (over) ExpenseManagerColors.expense else ExpenseManagerColors.primary
-                    LinearProgressIndicator(
-                        progress = { budget.usedPercent.min(BigInteger.valueOf(100)).toInt() / 100f },
-                        modifier = Modifier.fillMaxWidth().height(7.dp).testTag("home_budget_progress"),
-                        color = color, trackColor = ExpenseManagerColors.mutedSurface, gapSize = 0.dp,
-                        drawStopIndicator = {},
-                    )
-                    Text(stringResource(if (over) R.string.home_budget_exceeded else R.string.home_budget_remaining,
-                        homeVnd(if (over) -budget.remainingVnd else budget.remainingVnd, locale)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (over) color else ExpenseManagerColors.textSecondary,
-                        modifier = Modifier.testTag("home_budget_remaining"))
+                    BudgetProgress(budget, "home_budget_progress")
+                    if (budget.limitReached) {
+                        BudgetWarning(budget, locale, "home_budget_warning")
+                    } else {
+                        Text(stringResource(R.string.home_budget_remaining, homeVnd(budget.remainingVnd, locale)),
+                            style = MaterialTheme.typography.bodySmall, color = ExpenseManagerColors.textSecondary,
+                            modifier = Modifier.testTag("home_budget_remaining"))
+                    }
                 }
             }
         }
