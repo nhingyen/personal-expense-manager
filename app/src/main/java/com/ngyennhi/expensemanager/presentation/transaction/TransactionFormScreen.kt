@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.presentation.transaction
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,6 +80,7 @@ internal fun TransactionFormScreen(
     onRetryWallets: () -> Unit = {},
 ) {
     val form = state.form
+    BackHandler(enabled = form.isSaving) { /* Wait for the confirmed write result. */ }
     val locale = LocalConfiguration.current.locales[0]
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showCategories by rememberSaveable { mutableStateOf(false) }
@@ -86,7 +88,7 @@ internal fun TransactionFormScreen(
     Scaffold(
         containerColor = ExpenseManagerColors.background,
         topBar = { AppTopBar(stringResource(if (form.editingId == null) R.string.add_transaction_title
-            else R.string.edit_transaction_title), onBack = onBack) },
+            else R.string.edit_transaction_title), onBack = { if (!form.isSaving) onBack() }) },
     ) { padding ->
         when {
             form.editingId != null && state.loadStatus == LoadStatus.LOADING && !form.initialized ->
@@ -103,9 +105,9 @@ internal fun TransactionFormScreen(
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TypeChip(stringResource(R.string.type_expense), form.type == TransactionType.EXPENSE,
-                        { onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f), enabled = !form.isSaving)
                     TypeChip(stringResource(R.string.type_income), form.type == TransactionType.INCOME,
-                        { onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f), enabled = !form.isSaving)
                 }
                 Column {
                     Surface(color = ExpenseManagerColors.primaryContainer, shape = RoundedCornerShape(20.dp),
@@ -117,6 +119,7 @@ internal fun TransactionFormScreen(
                             BasicTextField(
                                 value = form.amountInput,
                                 onValueChange = onAmountChange,
+                                enabled = !form.isSaving,
                                 modifier = Modifier.fillMaxWidth().testTag("amount_input"),
                                 singleLine = true,
                                 textStyle = MaterialTheme.typography.displaySmall.copy(
@@ -147,13 +150,14 @@ internal fun TransactionFormScreen(
                         OutlinedTextField(
                             value = form.category,
                             onValueChange = onCategoryChange,
+                            enabled = !form.isSaving,
                             modifier = Modifier.fillMaxWidth().testTag("category_input"),
                             placeholder = { Text(stringResource(R.string.category_hint)) },
                             leadingIcon = { CategoryIcon(form.category.ifBlank {
                                 if (form.type == TransactionType.EXPENSE) "Food" else "Salary"
                             }, form.type, 36.dp) },
                             trailingIcon = {
-                                IconButton(onClick = { showCategories = true },
+                                IconButton(onClick = { showCategories = true }, enabled = !form.isSaving,
                                     modifier = Modifier.testTag("choose_category_button")) {
                                     Image(painterResource(R.drawable.ic_chevron_down),
                                         stringResource(R.string.choose_category), Modifier.size(20.dp), colorFilter = appearanceIconFilter(ExpenseManagerColors.textSecondary))
@@ -181,7 +185,7 @@ internal fun TransactionFormScreen(
                         color = ExpenseManagerColors.textSecondary)
                     Spacer(Modifier.height(8.dp))
                     Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("date_input").clickable { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("date_input").clickable(enabled = !form.isSaving) { showDatePicker = true },
                         color = ExpenseManagerColors.surface,
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseManagerColors.outline),
@@ -203,6 +207,7 @@ internal fun TransactionFormScreen(
                     OutlinedTextField(
                         value = form.note,
                         onValueChange = onNoteChange,
+                        enabled = !form.isSaving,
                         modifier = Modifier.fillMaxWidth().testTag("note_input"),
                         placeholder = { Text(stringResource(R.string.note_hint)) },
                         minLines = 3,

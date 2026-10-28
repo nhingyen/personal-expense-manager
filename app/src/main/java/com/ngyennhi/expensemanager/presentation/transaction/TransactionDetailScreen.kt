@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.presentation.transaction
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,10 +60,11 @@ internal fun TransactionDetailScreen(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val record = state.selectedRecord
+    BackHandler(enabled = state.isDeleting) { /* Wait for the confirmed delete result. */ }
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(
         containerColor = ExpenseManagerColors.background,
-        topBar = { AppTopBar(stringResource(R.string.transaction_detail_title), onBack = onBack) },
+        topBar = { AppTopBar(stringResource(R.string.transaction_detail_title), onBack = { if (!state.isDeleting) onBack() }) },
     ) { padding ->
         when {
             state.loadStatus == LoadStatus.LOADING && record == null ->
@@ -123,6 +125,7 @@ internal fun TransactionDetailScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = onEdit,
+                        enabled = !state.isDeleting,
                         modifier = Modifier.weight(1f).height(50.dp).testTag("edit_transaction_button"),
                         colors = ButtonDefaults.buttonColors(containerColor = ExpenseManagerColors.primaryContainer,
                             contentColor = ExpenseManagerColors.primaryText),
