@@ -28,7 +28,7 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 
 ## Features
 
-- Add, edit and delete income/expenses with category, date, note and wallet.
+- Add, edit and delete income/expenses with category, date, an optional note of up to 200 characters and wallet.
 - Manage manual cash, bank and e-wallet balances in VND.
 - View monthly totals, budgets and spending warnings.
 - Search and filter transactions by type, category and date.
@@ -56,7 +56,7 @@ MVVM + Clean Architecture in one `:app` module: `presentation → domain ← dat
 Requires Android Studio supporting **AGP 9.4.1**, **JDK 25**, **SDK 37**, Build Tools **36.0.0**, and an **API 26+** device. Gradle is provided by the wrapper.
 
 1. Clone the repository and open it in Android Studio.
-2. Set your Android SDK path in local.properties.
+2. Set your Android SDK path in `local.properties`.
 3. Sync Gradle, select `app`, and click **Run**. No service configuration or credentials are required.
 
 ## Build & test
