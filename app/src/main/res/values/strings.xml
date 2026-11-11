@@ -64,7 +64,7 @@
     <string name="category_salary">Lương</string>
     <string name="transaction_row_summary">%1$s · %2$s</string>
     <string name="note_hint">Thêm ghi chú (không bắt buộc)</string>
-    <string name="note_count">%1$d/200 ký tự</string>
+    <string name="note_count">%1$d/%2$d ký tự</string>
     <string name="field_required">Trường này là bắt buộc</string>
     <string name="amount_invalid">Nhập số tiền VND nguyên dương hợp lệ</string>
     <string name="save_transaction">Lưu giao dịch</string>
