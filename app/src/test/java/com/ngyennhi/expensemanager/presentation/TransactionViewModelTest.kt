@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.presentation
 
+import com.ngyennhi.expensemanager.domain.model.MAX_TRANSACTION_NOTE_LENGTH
 import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
@@ -308,6 +309,48 @@ class TransactionViewModelTest {
         assertEquals(Long.MAX_VALUE, repository.records.value.single().amountVnd)
         assertEquals(YearMonth.of(2026, 9), viewModel.uiState.value.selectedMonth)
         assertEquals(TransactionNavigationEvent.SAVED, viewModel.navigationEvents.first())
+    }
+
+    @Test
+    fun noteInputTruncatesAtUnicodeLimitWithoutSplittingEmoji() = runTest {
+        val input = "a".repeat(MAX_TRANSACTION_NOTE_LENGTH - 1) + "🙂" + "discarded"
+
+        viewModel.setNote(input)
+
+        assertEquals("a".repeat(MAX_TRANSACTION_NOTE_LENGTH - 1) + "🙂", viewModel.uiState.value.form.note)
+    }
+
+    @Test
+    fun saveTrimsNoteAndStoresBlankNoteAsNull() = runTest {
+        runCurrent()
+        viewModel.startAdd()
+        viewModel.setAmount("100")
+        viewModel.setCategory("Food")
+        viewModel.setNote("  Lunch 🙂  ")
+        viewModel.save()
+        advanceUntilIdle()
+        assertEquals("Lunch 🙂", repository.records.value.single().note)
+
+        viewModel.startAdd()
+        viewModel.setAmount("200")
+        viewModel.setCategory("Travel")
+        viewModel.setNote("   ")
+        viewModel.save()
+        advanceUntilIdle()
+        assertEquals(null, repository.records.value.first().note)
+    }
+
+    @Test
+    fun editPreservesLegacyNoteThatExceedsCurrentLimit() = runTest {
+        val overLimit = "🙂".repeat(MAX_TRANSACTION_NOTE_LENGTH + 1)
+        repository.records.value = listOf(
+            transaction(7, TransactionType.EXPENSE, "Food", LocalDate.of(2026, 10, 19), overLimit),
+        )
+        runCurrent()
+
+        viewModel.startEdit(7)
+
+        assertEquals(overLimit, viewModel.uiState.value.form.note)
     }
 
     @Test

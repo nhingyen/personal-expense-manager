@@ -6,6 +6,7 @@ import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.model.truncateTransactionNote
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.FilterTransactionsUseCase
@@ -117,7 +118,9 @@ class TransactionViewModel @Inject constructor(
 
     fun setDate(value: LocalDate) = edit { it.copy(form = it.form.copy(date = value), actionError = null) }
 
-    fun setNote(value: String) = edit { it.copy(form = it.form.copy(note = value.take(200)), actionError = null) }
+    fun setNote(value: String) = edit {
+        it.copy(form = it.form.copy(note = value.truncateTransactionNote()), actionError = null)
+    }
 
     fun setWallet(value: Long) = edit { it.copy(form = it.form.copy(walletId = value), actionError = null) }
 

@@ -56,7 +56,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
+import com.ngyennhi.expensemanager.domain.model.MAX_TRANSACTION_NOTE_LENGTH
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.model.transactionNoteLength
+import com.ngyennhi.expensemanager.domain.model.truncateTransactionNote
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
@@ -206,13 +209,19 @@ internal fun TransactionFormScreen(
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = form.note,
-                        onValueChange = onNoteChange,
+                        onValueChange = { onNoteChange(it.truncateTransactionNote()) },
                         enabled = !form.isSaving,
                         modifier = Modifier.fillMaxWidth().testTag("note_input"),
                         placeholder = { Text(stringResource(R.string.note_hint)) },
                         minLines = 3,
                         shape = RoundedCornerShape(14.dp),
-                        supportingText = { Text(stringResource(R.string.note_count, form.note.length)) },
+                        supportingText = {
+                            Text(stringResource(
+                                R.string.note_count,
+                                form.note.transactionNoteLength(),
+                                MAX_TRANSACTION_NOTE_LENGTH,
+                            ))
+                        },
                     )
                 }
                 walletState?.let {
