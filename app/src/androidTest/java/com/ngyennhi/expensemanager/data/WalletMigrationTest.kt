@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ngyennhi.expensemanager.data.local.ExpenseManagerDatabase
 import com.ngyennhi.expensemanager.data.repository.RoomTransactionRepository
 import com.ngyennhi.expensemanager.data.repository.RoomWalletRepository
+import com.ngyennhi.expensemanager.data.repository.PreferencesMonthlyBudgetRepository
 import com.ngyennhi.expensemanager.domain.model.*
 import com.ngyennhi.expensemanager.domain.usecase.*
 import java.time.LocalDate
@@ -99,6 +100,38 @@ class WalletMigrationTest {
             assertEquals(1, repo.observeTransactions().first().size)
             assertFalse(wallets.deleteEmpty(1))
         } finally { db.close() }
+    }
+    @Test fun migrationAndV2ReopenKeepBudgetPreferencesAndLegacyTransaction() = runBlocking {
+        val preferencesName = "qa-upgrade-budgets-${System.nanoTime()}"
+        val preferences = context.getSharedPreferences(preferencesName, android.content.Context.MODE_PRIVATE)
+        val limits = mapOf(YearMonth.of(2024, 2) to Long.MAX_VALUE,
+            YearMonth.of(2026, 12) to 100L, YearMonth.of(2027, 1) to 300L)
+        try {
+            val budgets = PreferencesMonthlyBudgetRepository(preferences)
+            limits.forEach { (month, limit) -> budgets.setLimit(month, limit) }
+            assertTrue(preferences.edit().putString("unrelated_key", "retain").commit())
+            val before = preferences.all.toMap()
+            helper.createDatabase(name, 1).apply {
+                execSQL("INSERT INTO transactions VALUES (7, 'EXPENSE', 250, 'Food', 19782, 'Leap day')")
+                close()
+            }
+            helper.runMigrationsAndValidate(name, 2, true, ExpenseManagerDatabase.MIGRATION_1_2).close()
+            val expected = Transaction(7, TransactionType.EXPENSE, 250, "Food",
+                LocalDate.of(2024, 2, 29), "Leap day", DEFAULT_WALLET_ID)
+            repeat(2) {
+                val db = open()
+                try {
+                    assertEquals(listOf(expected), RoomTransactionRepository(db.transactionDao()).observeTransactions().first())
+                    assertEquals(2, db.openHelper.readableDatabase.version)
+                    db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { cursor ->
+                        assertFalse(cursor.moveToFirst())
+                    }
+                } finally { db.close() }
+                val reopened = context.getSharedPreferences(preferencesName, android.content.Context.MODE_PRIVATE)
+                assertEquals(before, reopened.all)
+                assertEquals(limits, PreferencesMonthlyBudgetRepository(reopened).observeLimits().first())
+            }
+        } finally { context.deleteSharedPreferences(preferencesName) }
     }
     private fun open() = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name)
         .addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET)

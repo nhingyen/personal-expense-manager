@@ -9,5 +9,5 @@ git diff --cached --check
 echo 'Running unit tests...'
 case "${OS:-}" in
     Windows_NT) ./gradlew.bat :app:testDebugUnitTest ;;
-    *) ./gradlew :app:testDebugUnitTest ;;
+    *) sh ./gradlew :app:testDebugUnitTest ;;
 esac

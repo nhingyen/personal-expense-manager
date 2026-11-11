@@ -214,7 +214,7 @@ class TransactionViewModel @Inject constructor(
         amountInput = amountVnd.toString(),
         category = category,
         date = date,
-        note = note.orEmpty().truncateTransactionNote(),
+        note = note.orEmpty(),
         walletId = walletId,
     )
 }

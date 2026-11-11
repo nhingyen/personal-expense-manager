@@ -6,5 +6,5 @@ cd "$(git rev-parse --show-toplevel)"
 echo 'Building and running lint...'
 case "${OS:-}" in
     Windows_NT) ./gradlew.bat :app:assembleDebug :app:lintDebug ;;
-    *) ./gradlew :app:assembleDebug :app:lintDebug ;;
+    *) sh ./gradlew :app:assembleDebug :app:lintDebug ;;
 esac

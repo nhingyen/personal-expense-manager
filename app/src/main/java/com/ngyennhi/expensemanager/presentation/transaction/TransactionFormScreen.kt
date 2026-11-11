@@ -108,9 +108,9 @@ internal fun TransactionFormScreen(
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TypeChip(stringResource(R.string.type_expense), form.type == TransactionType.EXPENSE,
-                        { if (!form.isSaving) onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.EXPENSE) }, Modifier.weight(1f), enabled = !form.isSaving)
                     TypeChip(stringResource(R.string.type_income), form.type == TransactionType.INCOME,
-                        { if (!form.isSaving) onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f))
+                        { onTypeChange(TransactionType.INCOME) }, Modifier.weight(1f), enabled = !form.isSaving)
                 }
                 Column {
                     Surface(color = ExpenseManagerColors.primaryContainer, shape = RoundedCornerShape(20.dp),

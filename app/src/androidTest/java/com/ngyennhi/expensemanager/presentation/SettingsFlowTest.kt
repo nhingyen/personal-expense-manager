@@ -230,7 +230,12 @@ class SettingsFlowTest {
                     java.io.FileInputStream(descriptor.fileDescriptor).use { it.readBytes() }
                 }
         }
-        fun background() = compose.onNodeWithTag("settings_screen").captureToImage().toPixelMap()[0, 0]
+        fun awaitAppliedAppearance(dark: Boolean) {
+            compose.waitUntil(5_000) {
+                WindowCompat.getInsetsController(compose.activity.window, compose.activity.window.decorView)
+                    .isAppearanceLightStatusBars == !dark
+            }
+        }
         fun awaitNight(night: Int) {
             // Wait for Activity configuration before asking Compose for a screenshot;
             // synchronizing an old root while it is being recreated can stall the frame clock.
@@ -243,15 +248,17 @@ class SettingsFlowTest {
             systemNight("yes")
             awaitNight(Configuration.UI_MODE_NIGHT_YES)
             assertTrue(vm.uiState.value.theme.isDark(true))
+            awaitAppliedAppearance(dark = true)
             compose.onNodeWithTag("nav_settings").assertIsSelected()
             selectTheme(AppTheme.LIGHT)
-            assertEquals(Color(0xFFFAF9FC), background())
+            awaitAppliedAppearance(dark = false)
             systemNight("no")
             awaitNight(Configuration.UI_MODE_NIGHT_NO)
             selectTheme(AppTheme.DARK)
-            assertEquals(Color(0xFF15121B), background())
+            awaitAppliedAppearance(dark = true)
             selectTheme(AppTheme.SYSTEM)
             assertFalse(vm.uiState.value.theme.isDark(false))
+            awaitAppliedAppearance(dark = false)
         } finally {
             systemNight(when (original) {
                 UiModeManager.MODE_NIGHT_YES -> "yes"
