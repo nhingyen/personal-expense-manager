@@ -1,6 +1,6 @@
 # Roadmap
 
-Work in task order. Each task should produce one reviewable PR; update scope and acceptance criteria before implementation when requirements change. [TASK-000.md](TASK-000.md) expands the foundation task, and [TASK-002.md](TASK-002.md) defines the next storage task's observable checks.
+Work in task order for roadmap-scale initiatives. Each roadmap task should produce one reviewable PR; update scope and acceptance criteria before implementation when requirements change. Ordinary features and fixes may be scoped by an issue or clearly stated request and do not require a new `TASK-###.md`. Create a persistent task only when complexity, risk, coordination, migration, or release evidence requires durable scope and acceptance criteria. [TASK-000.md](TASK-000.md) expands the foundation task, and [TASK-002.md](TASK-002.md) defines the next storage task's observable checks.
 
 | Task | Outcome | Acceptance criteria |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
-## Task and changes
+## Scope and changes
 
-- Task: `TASK-___` (or issue link)
+- Scope: roadmap task, issue, or user request:
 - Summary:
 
 ## Verification
@@ -12,9 +12,10 @@
 ## Review
 
 - [ ] I reviewed the full diff and resolved findings.
-- [ ] Architecture boundaries and task acceptance criteria were checked.
+- [ ] Architecture boundaries and applicable acceptance criteria were checked.
 - [ ] UI screenshots are attached, or this PR has no UI changes.
 - Reviewer notes or questions:
+- Key decisions or learning notes:
 
 ## Limitations
 
