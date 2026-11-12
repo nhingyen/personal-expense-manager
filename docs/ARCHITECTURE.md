@@ -55,6 +55,18 @@ TASK-011/TASK-012 describe historical implementations superseded by TASK-013. Cl
 
 Android backup export is disabled in the manifest; data extraction rules exclude app storage from cloud backup and device transfer. This changes export policy without deleting or rewriting existing local files.
 
+Manual transaction CSV export is separate from Android backup. The existing
+`WalletViewModel` publishes wallets and all transactions together in one immutable
+`WalletUiState`. Export captures one READY state value, rejects any transaction
+whose wallet is absent, and ignores transaction-list filters. Presentation encodes
+that snapshot into a complete UTF-8 byte array before opening the user-selected
+document. `MainActivity` owns the `CreateDocument("text/csv")` contract
+and writes through `ContentResolver` on `Dispatchers.IO`; it never receives a raw
+filesystem path. Cancellation is silent, duplicate requests are blocked, and a
+failed provider write is best-effort truncated so incomplete CSV content is not
+presented as successful. This adds no schema, permission, network client or new
+dependency.
+
 ## Localization
 
 Vietnamese is the default resource locale (`values/strings.xml` and `res/resources.properties`); English translations live in `values-en/strings.xml`. User-facing text belongs in Android string/plural resources with matching keys and placeholders. Date, number, and currency display formatting belongs in presentation, while domain values remain locale-neutral.

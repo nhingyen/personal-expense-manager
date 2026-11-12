@@ -5,11 +5,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ngyennhi.expensemanager.domain.model.AppLanguage
 import com.ngyennhi.expensemanager.domain.model.AppTheme
 import com.ngyennhi.expensemanager.presentation.settings.SettingsScreen
 import com.ngyennhi.expensemanager.presentation.settings.SettingsUiState
+import com.ngyennhi.expensemanager.presentation.settings.CsvExportStatus
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -26,7 +29,7 @@ class SettingsScreenTest {
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 2f)) {
                 PersonalExpenseManagerTheme(darkTheme = true) {
-                    SettingsScreen(SettingsUiState(isLoading = false), { language = it }, { theme = it }, {}, {})
+                    SettingsScreen(SettingsUiState(isLoading = false), { language = it }, { theme = it }, {}, {}, {})
                 }
             }
         }
@@ -35,6 +38,7 @@ class SettingsScreenTest {
         compose.onNodeWithTag("theme_DARK").performScrollTo().assertIsDisplayed().performClick()
         assertEquals(AppTheme.DARK, theme)
         compose.onNodeWithTag("settings_version").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("settings_export_csv").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun readFailureBlocksWritesAndExposesRetry() {
@@ -43,7 +47,7 @@ class SettingsScreenTest {
         compose.setContent {
             PersonalExpenseManagerTheme(darkTheme = false) {
                 SettingsScreen(SettingsUiState(isLoading = false, readError = true),
-                    { writes++ }, { writes++ }, { retries++ }, {})
+                    { writes++ }, { writes++ }, { retries++ }, {}, {})
             }
         }
         compose.onNodeWithTag("language_ENGLISH").performScrollTo().assertIsNotEnabled()
@@ -54,5 +58,25 @@ class SettingsScreenTest {
         compose.onNodeWithText(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
             .targetContext.getString(com.ngyennhi.expensemanager.R.string.retry)).performScrollTo().performClick()
         assertEquals(1, retries)
+    }
+
+    @Test fun exportIsReachableIndependentFromPreferenceErrorsAndBusyStateBlocksDuplicates() {
+        var exports = 0
+        var state by androidx.compose.runtime.mutableStateOf(
+            SettingsUiState(isLoading = false, readError = true),
+        )
+        compose.setContent {
+            PersonalExpenseManagerTheme(darkTheme = false) {
+                SettingsScreen(state, {}, {}, {}, {}, { exports++ })
+            }
+        }
+
+        compose.onNodeWithTag("settings_export_csv").performScrollTo().assertIsEnabled().performClick()
+        assertEquals(1, exports)
+        compose.runOnIdle { state = state.copy(exportStatus = CsvExportStatus.WRITING) }
+        compose.onNodeWithTag("settings_export_csv").performScrollTo().assertIsNotEnabled()
+        assertEquals(1, exports)
+        compose.runOnIdle { state = state.copy(exportStatus = CsvExportStatus.PARTIAL_FILE_MAY_REMAIN) }
+        compose.onNodeWithTag("settings_export_message").performScrollTo().assertIsDisplayed()
     }
 }

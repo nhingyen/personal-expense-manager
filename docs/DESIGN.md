@@ -103,7 +103,7 @@ Treat loading and an observed empty result as separate UI states. Announce error
 
 ## TBD and scope
 
-**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; full management screens for categories/budgets, wallets, transfer, backup, export, and delete-all. Resolve each when its roadmap task is implemented. The latest TASK-004 request explicitly includes Home budget configuration/progress, category selection, and in-app budget notices; the remaining Figma features do not expand the current MVP.
+**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; full management screens for categories/budgets, wallets, transfer, backup, import/restore, and delete-all. Transaction-only CSV export does not expand into those remaining Figma features. Resolve each when its roadmap task is implemented. The latest TASK-004 request explicitly includes Home budget configuration/progress, category selection, and in-app budget notices; the remaining Figma features do not expand the current MVP.
 
 ## HomeScreen UI slice (2026-10-23)
 

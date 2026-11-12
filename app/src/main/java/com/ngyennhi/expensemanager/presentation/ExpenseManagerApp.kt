@@ -41,6 +41,7 @@
         onLanguage: (com.ngyennhi.expensemanager.domain.model.AppLanguage) -> Unit,
         onTheme: (com.ngyennhi.expensemanager.domain.model.AppTheme) -> Unit,
         onRetrySettings: () -> Unit,
+        onExportCsv: () -> Unit,
     ) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
@@ -146,7 +147,8 @@
                 composable(AppRoutes.SETTINGS) {
                     com.ngyennhi.expensemanager.presentation.settings.SettingsScreen(settings,
                         onLanguage, onTheme, onRetrySettings,
-                        onWallets = { navController.navigate(AppRoutes.WALLETS) })
+                        onWallets = { navController.navigate(AppRoutes.WALLETS) },
+                        onExportCsv = onExportCsv)
                 }
                 composable(AppRoutes.WALLETS) {
                     WalletListScreen(walletState, onBack = { navController.popBackStack() },

@@ -33,6 +33,15 @@ TASK-013 prepares Offline-only v1.0.0: the app opens directly into Home with one
 
 TASK-010 adds Settings language (System Default/VI/EN), Light/Dark/System appearance, persisted preferences and About/installed version. It retains the existing Wallets entry, shared bottom navigation and configuration state. See [TASK-010](../tasks/TASK-010.md) for verification; this supersedes earlier Settings/language/theme deferrals below. Cloud sync, authentication, backup and export remain outside scope.
 
+The later offline CSV feature adds one Settings data-management action that exports
+all saved transactions, independent of list filters. One READY immutable wallet
+UI snapshot supplies its complete transaction and wallet lists; missing wallet
+references reject the export. A pure Kotlin encoder writes the documented
+nine-column UTF-8/BOM, CRLF CSV format. Android's Storage Access
+Framework lets the user choose the destination without storage permission or
+network access. This is read-only transaction export, not import, restore, cloud
+backup, automatic sync or full-app backup; Room schema v2 is unchanged.
+
 TASK-009 adds manual cash/bank/e-wallet management from Settings, wallet balances and wallet-linked transactions. Room v2 migrates existing records into a permanent default cash wallet without changing report totals. Wallet detail lists all of its transactions; Add/edit can select a saved wallet. No bank integration or transfers. See [TASK-009](../tasks/TASK-009.md) for acceptance criteria and verification; it supersedes the Wallet/Settings-placeholder deferrals below.
 
 TASK-008 extends the existing Home budget sheet with direct month selection, saved-limit/spent/remaining overview, month-specific edit/remove, and reached/exceeded warnings shared with Dashboard. It reuses the existing budget use cases/preferences and Room transactions; see [TASK-008](../tasks/TASK-008.md) for acceptance criteria and current verification.

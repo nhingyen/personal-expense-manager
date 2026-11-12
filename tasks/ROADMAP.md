@@ -22,7 +22,7 @@ Work in task order for roadmap-scale initiatives. Each roadmap task should produ
 | [TASK-015](TASK-015.md) | Launcher Icon verification | Verify Image Asset Studio adaptive/legacy resources, manifest references and packaged icons; pass Debug/Release builds; inspect the icon on an available emulator and document remaining manual checks without uninstalling or clearing app data. |
 
 TASK-000 is documentation and development workflow only. App features and new dependencies begin in later tasks.
-TASK-006 implements transaction search/filter; TASK-014 owns final release verification. TASK-005's Statistics placeholder is superseded by TASK-007. TASK-010 extends TASK-009's Settings/Wallets entry with language, theme and About. TASK-011/TASK-012 are historical authentication work retired by TASK-013; v1.0.0 has one local financial profile. Export, automatic cloud sync and delete-all remain deferred.
+TASK-006 implements transaction search/filter; TASK-014 owns final release verification. TASK-005's Statistics placeholder is superseded by TASK-007. TASK-010 extends TASK-009's Settings/Wallets entry with language, theme and About. TASK-011/TASK-012 are historical authentication work retired by TASK-013; v1.0.0 has one local financial profile. The later ordinary feature request adds read-only transaction CSV export through Android's document picker. Import/restore, full-app backup, automatic cloud sync and delete-all remain deferred.
 
 TASK-014's latest continuation has a fresh 98-test unit pass and an uninterrupted
 63-test API 35 instrumentation pass; earlier failed/interrupted attempts remain

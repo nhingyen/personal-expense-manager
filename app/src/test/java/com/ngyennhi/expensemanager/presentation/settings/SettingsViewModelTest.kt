@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModelStore
 import com.ngyennhi.expensemanager.domain.model.AppLanguage
 import com.ngyennhi.expensemanager.domain.model.AppTheme
 import com.ngyennhi.expensemanager.domain.repository.SettingsRepository
+import com.ngyennhi.expensemanager.presentation.export.TransactionCsvEncoder
+import com.ngyennhi.expensemanager.presentation.transaction.LoadStatus
+import com.ngyennhi.expensemanager.presentation.wallet.WalletUiState
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +26,8 @@ class SettingsViewModelTest {
     private val store = ViewModelStore()
     @Before fun setup() = Dispatchers.setMain(dispatcher)
     @After fun cleanup() { store.clear(); Dispatchers.resetMain() }
-    private fun create() = SettingsViewModel(repository).also { store.put("${System.identityHashCode(it)}", it) }
+    private fun create() = SettingsViewModel(repository)
+        .also { store.put("${System.identityHashCode(it)}", it) }
 
     @Test fun defaultsAndRestoredPreferencesAreObserved() = runTest(dispatcher) {
         repository.theme.value = AppTheme.DARK
@@ -95,6 +99,60 @@ class SettingsViewModelTest {
         runCurrent()
         assertFalse(vm.uiState.value.readError)
         assertEquals(2, repository.observers)
+    }
+
+    @Test fun genuineEmptySnapshotCreatesHeaderOnlyExportAndCancellationReturnsToIdle() = runTest(dispatcher) {
+        val vm = create(); runCurrent()
+        assertTrue(vm.beginCsvExport())
+        val document = TransactionCsvEncoder.encode(WalletUiState(status = LoadStatus.READY))
+        assertEquals(0, document.transactionCount)
+        vm.exportPrepared(document)
+        assertEquals(CsvExportStatus.AWAITING_DESTINATION, vm.uiState.value.exportStatus)
+        assertNotNull(vm.currentExportDocument())
+        vm.exportCancelled()
+        assertEquals(CsvExportStatus.IDLE, vm.uiState.value.exportStatus)
+        assertNull(vm.currentExportDocument())
+    }
+
+    @Test fun pendingPreparationAndOpenPickerBlockDuplicatesAndPreparationFailureIsRetryable() = runTest(dispatcher) {
+        val vm = create(); runCurrent()
+        assertTrue(vm.beginCsvExport())
+        assertFalse(vm.beginCsvExport())
+        assertEquals(CsvExportStatus.PREPARING, vm.uiState.value.exportStatus)
+        vm.exportPrepared(TransactionCsvEncoder.encode(WalletUiState(status = LoadStatus.READY)))
+        assertFalse(vm.beginCsvExport())
+        assertEquals(CsvExportStatus.AWAITING_DESTINATION, vm.uiState.value.exportStatus)
+        vm.exportCancelled()
+
+        assertTrue(vm.beginCsvExport())
+        vm.exportPreparationFailed()
+        assertEquals(CsvExportStatus.SOURCE_UNAVAILABLE, vm.uiState.value.exportStatus)
+        assertTrue(vm.beginCsvExport())
+    }
+
+    @Test fun destinationAndWriteResultsHaveDistinctStates() = runTest(dispatcher) {
+        val vm = create(); runCurrent()
+        vm.exportCompleted()
+        assertEquals(CsvExportStatus.IDLE, vm.uiState.value.exportStatus)
+
+        vm.beginCsvExport()
+        vm.exportPrepared(TransactionCsvEncoder.encode(WalletUiState(status = LoadStatus.READY)))
+        vm.exportDestinationSelected()
+        assertEquals(CsvExportStatus.WRITING, vm.uiState.value.exportStatus)
+        vm.exportFailed(partialFileMayRemain = false)
+        assertEquals(CsvExportStatus.WRITE_FAILED, vm.uiState.value.exportStatus)
+
+        vm.beginCsvExport()
+        vm.exportPrepared(TransactionCsvEncoder.encode(WalletUiState(status = LoadStatus.READY)))
+        vm.exportDestinationSelected()
+        vm.exportFailed(partialFileMayRemain = true)
+        assertEquals(CsvExportStatus.PARTIAL_FILE_MAY_REMAIN, vm.uiState.value.exportStatus)
+
+        vm.beginCsvExport()
+        vm.exportPrepared(TransactionCsvEncoder.encode(WalletUiState(status = LoadStatus.READY)))
+        vm.exportDestinationSelected()
+        vm.exportCompleted()
+        assertEquals(CsvExportStatus.SUCCESS, vm.uiState.value.exportStatus)
     }
 
     private class FakeSettings : SettingsRepository {

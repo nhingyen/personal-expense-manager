@@ -172,4 +172,10 @@
     <string name="settings_version">Phiên bản %1$s</string>
     <string name="settings_read_error">Không thể đọc tùy chọn giao diện. Hãy thử lại.</string>
     <string name="settings_write_error">Không thể lưu tùy chọn. Hãy chọn lại để thử lần nữa.</string>
+    <string name="settings_data_management">QUẢN LÝ DỮ LIỆU</string>
+    <string name="settings_export_data">Xuất dữ liệu</string>
+    <string name="settings_export_success">Đã lưu tệp CSV.</string>
+    <string name="settings_export_unavailable">Không thể đọc dữ liệu giao dịch. Chạm Xuất dữ liệu để thử lại.</string>
+    <string name="settings_export_write_failed">Không thể lưu tệp CSV. Tệp chưa hoàn chỉnh đã được làm trống.</string>
+    <string name="settings_export_partial_file">Không thể hoàn tất xuất dữ liệu. Hãy kiểm tra và xóa tệp có thể chưa hoàn chỉnh tại vị trí đã chọn.</string>
 </resources>
