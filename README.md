@@ -32,12 +32,15 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 - Manage manual cash, bank and e-wallet balances in VND.
 - View monthly totals, budgets and spending warnings.
 - Search and filter transactions by type, category and date.
+- Manage custom income and expense categories locally, including rename, archive, restore and guarded delete.
 - View category charts and six-month income/expense comparisons.
 - Choose Vietnamese/English and Light/Dark/System appearance.
 - Export every saved transaction to a user-selected CSV file without network or broad storage access.
 - Open and use every financial feature without an account or network.
 
 Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
+
+Development after v1.0.0 includes the TASK-016 Room v3 category catalog, safe migration, category-management UI and transaction-form integration. Historical transaction category strings remain compatible with filters, statistics and CSV export.
 
 Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
 

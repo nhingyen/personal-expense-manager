@@ -103,7 +103,7 @@ Treat loading and an observed empty result as separate UI states. Announce error
 
 ## TBD and scope
 
-**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; full management screens for categories/budgets, wallets, transfer, backup, import/restore, and delete-all. Transaction-only CSV export does not expand into those remaining Figma features. Resolve each when its roadmap task is implemented. The latest TASK-004 request explicitly includes Home budget configuration/progress, category selection, and in-app budget notices; the remaining Figma features do not expand the current MVP.
+**TBD:** product name; final English, dark, and larger-screen designs; final non-content state designs; full management screens for budgets, wallets, transfer, backup, import/restore, and delete-all. Transaction-only CSV export does not expand into those remaining Figma features. Resolve each when its roadmap task is implemented. TASK-016 now defines category management; the latest TASK-004 request explicitly includes Home budget configuration/progress, category selection, and in-app budget notices.
 
 ## HomeScreen UI slice (2026-10-23)
 
@@ -172,3 +172,9 @@ The reference download/export action is omitted because exporting is outside thi
 Budgets frame `3:10148` was inspected through Figma MCP metadata; monthly overview `3:10166` and month selector `3:10160` were consulted through design context and screenshots. The existing Home budget sheet now includes the shared month selector and a solid pastel-purple monthly overview: 20 dp corner radius, 16 dp padding, 8 dp gaps, 26 sp semibold limit, 7 dp progress, and spent/remaining columns. The existing calendar (18 dp) and chevrons (20 dp) reuse local Figma vector drawables inside 48 dp touch controls. Amounts wrap for long values and larger fonts. No new static asset is needed.
 
 The sheet deliberately extends the working TASK-004 editor rather than adding a separate navigation destination. Its selected month is shared with Dashboard. Save replaces that month's limit; Remove affects only its limit; Cancel/dismiss makes no write. Month changes reset unsaved drafts. Month arrows and editor controls block changes during a pending write. Unset and zero-spending copy, read/write errors, transaction loading/overflow/stale states and textual reached/exceeded warnings use matching VI/EN resources. Dashboard and sheet share progress/percentage/warning components; over-budget remaining amounts stay negative in the overview. Category budgets from the reference, Wallet, Settings and OS notifications remain outside this task. Verification is recorded in [TASK-008](../tasks/TASK-008.md).
+
+## TASK-016 Custom Categories (2026-11-13)
+
+Categories `3:10049` and Add transaction `3:9803` were consulted through Figma MCP design context. Management reuses the reference's expense/income sections, 20 dp side margins, 12 dp grid gaps, 118 dp white cards, tinted category icons and purple Add action. Because the reference does not define rename/archive/restore/delete interactions or error states, those actions use existing scalable Material 3 cards, menus and confirmation/editor dialogs with VI/EN resources.
+
+Settings exposes a separate Manage Categories entry. The existing Home Categories shortcut remains a quick chooser that prefills Add, preserving its established navigation. Add/Edit combine localized suggestions with active saved categories and remove normalized duplicates; archived values are hidden. Free text that matches an archived category shows a field error. Historical archived text remains visible in transaction-derived screens. No new visual dependency or runtime Figma asset was added.

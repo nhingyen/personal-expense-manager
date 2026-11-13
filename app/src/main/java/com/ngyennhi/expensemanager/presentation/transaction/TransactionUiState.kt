@@ -11,7 +11,7 @@ enum class LoadStatus { LOADING, READY, ERROR }
 
 enum class TransactionFilter { ALL, EXPENSE, INCOME }
 
-enum class FieldError { REQUIRED, INVALID_AMOUNT }
+enum class FieldError { REQUIRED, INVALID_AMOUNT, INVALID_CATEGORY, CATEGORY_ARCHIVED }
 
 enum class ActionError { SAVE_FAILED, DELETE_FAILED, RECORD_UNAVAILABLE }
 

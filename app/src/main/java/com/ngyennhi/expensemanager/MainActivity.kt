@@ -20,6 +20,7 @@ import com.ngyennhi.expensemanager.presentation.home.HomeViewModel
 import com.ngyennhi.expensemanager.presentation.settings.SettingsViewModel
 import com.ngyennhi.expensemanager.presentation.statistics.StatisticsViewModel
 import com.ngyennhi.expensemanager.presentation.transaction.TransactionViewModel
+import com.ngyennhi.expensemanager.presentation.category.CategoryViewModel
 import com.ngyennhi.expensemanager.presentation.export.writeCsvDocument
 import com.ngyennhi.expensemanager.presentation.export.TransactionCsvEncoder
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private val statisticsViewModel: StatisticsViewModel by viewModels()
     private val walletViewModel: com.ngyennhi.expensemanager.presentation.wallet.WalletViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val categoryViewModel: CategoryViewModel by viewModels()
     private val createCsvDocument = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv"),
     ) { uri ->
@@ -87,7 +89,7 @@ class MainActivity : AppCompatActivity() {
             // Wait only for the initial read; later retries must retain the navigation host.
             if (settings.isInitialized) {
                 PersonalExpenseManagerTheme(darkTheme = dark) {
-                    ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel, walletViewModel,
+                    ExpenseManagerApp(transactionViewModel, homeViewModel, statisticsViewModel, walletViewModel, categoryViewModel,
                         settings, settingsViewModel::setLanguage, settingsViewModel::setTheme,
                         settingsViewModel::retry, ::requestCsvExport)
                 }

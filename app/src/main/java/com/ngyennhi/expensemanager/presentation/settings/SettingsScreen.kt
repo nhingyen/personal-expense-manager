@@ -36,6 +36,7 @@ internal fun SettingsScreen(
     onRetry: () -> Unit,
     onWallets: () -> Unit,
     onExportCsv: () -> Unit,
+    onCategories: () -> Unit = {},
 ) {
     val enabled = !state.isLoading && !state.isSaving && !state.readError
     Scaffold(containerColor = ExpenseManagerColors.background,
@@ -65,6 +66,18 @@ internal fun SettingsScreen(
                     Icon(painterResource(R.drawable.ic_wallet), null, Modifier.size(20.dp), tint = ExpenseManagerColors.primary)
                     Text(stringResource(R.string.wallets_title), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(16.dp), tint = ExpenseManagerColors.textSecondary)
+                }
+            }
+            Surface(onClick = onCategories, shape = RoundedCornerShape(20.dp), color = ExpenseManagerColors.surface,
+                modifier = Modifier.fillMaxWidth().testTag("settings_categories")) {
+                Row(Modifier.heightIn(min = 72.dp).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(painterResource(R.drawable.ic_home_categories), null, Modifier.size(20.dp),
+                        tint = ExpenseManagerColors.primary)
+                    Text(stringResource(R.string.categories_manage_title), Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium)
+                    Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(16.dp),
+                        tint = ExpenseManagerColors.textSecondary)
                 }
             }
             SettingsCard {

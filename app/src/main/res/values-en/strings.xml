@@ -178,4 +178,26 @@
     <string name="settings_export_unavailable">Could not read transaction data. Tap Export data to retry.</string>
     <string name="settings_export_write_failed">Could not save the CSV. The incomplete file was emptied.</string>
     <string name="settings_export_partial_file">Export could not finish. Check and delete the potentially incomplete file at the selected location.</string>
+    <!-- TASK-016 Custom Categories -->
+    <string name="categories_manage_title">Manage categories</string>
+    <string name="categories_manage_hint">Organize income and expenses your way. Archived categories remain on historical transactions.</string>
+    <string name="category_expense_heading">Expense categories</string>
+    <string name="category_income_heading">Income categories</string>
+    <string name="category_add">Add category</string>
+    <string name="category_edit">Edit category</string>
+    <string name="category_name">Category name</string>
+    <string name="category_empty">No active categories yet.</string>
+    <string name="category_archived">Archived</string>
+    <string name="category_archived_heading">Archived</string>
+    <string name="category_archive">Archive</string>
+    <string name="category_restore">Restore</string>
+    <string name="category_delete">Delete category</string>
+    <string name="category_delete_confirm">Delete this unused category? This cannot be undone.</string>
+    <string name="category_name_invalid">Enter a name with 1 to 60 characters.</string>
+    <string name="category_duplicate">This name already exists for the same transaction type.</string>
+    <string name="category_archived_input">This category is archived. Restore it or choose another name.</string>
+    <string name="category_read_error">Categories could not be loaded. Please retry.</string>
+    <string name="category_write_error">The change could not be saved. Your input has been kept.</string>
+    <string name="category_delete_in_use">A category with transactions cannot be deleted. You can archive it instead.</string>
+    <string name="category_unavailable">This category is no longer available.</string>
 </resources>

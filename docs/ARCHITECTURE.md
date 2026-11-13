@@ -107,6 +107,16 @@ Dashboard, Statistics and Budget still observe the same unjoined transaction rec
 
 The only new test library is version-catalog `room-testing`, with schema assets for MigrationTestHelper. A debug-only serialization BOM aligns Room migration JSON 1.8.1 with the serialization core already pulled in by Navigation; otherwise AGP's consistent resolution selected core 1.7.3 and migration schema parsing failed with AbstractMethodError. Release runtime dependencies are unchanged by this test alignment.
 
+## Custom Categories (TASK-016)
+
+Room v3 adds a `categories` catalog while retaining `Transaction.category` and `transactions.category` as strings. `CategoryRepository` is a pure domain contract; Room supplies the entity, DAO and repository, and Hilt connects category use cases at the app boundary. `CategoryViewModel` observes this catalog for management and the transaction form combines its active values with localized built-in suggestions.
+
+`MIGRATION_2_3` creates the catalog and reads existing transaction type/category pairs in ID order. Kotlin `trim().lowercase(Locale.ROOT)` normalization is used because SQLite `lower()` and `NOCASE` do not provide the required Unicode behavior. The first display spelling becomes the catalog row; all transaction rows remain unchanged. A unique `(type, normalized_name)` index enforces one case-insensitive category per transaction type. Production registers both migrations and has no destructive fallback.
+
+Category rename is one Room transaction: it changes the catalog row and every historical transaction string whose trimmed, Locale.ROOT-normalized value matches the old normalized name. Archive changes only catalog state. Guarded delete scans the same normalized historical values and refuses an in-use category. Free text matching an archived row resolves to an explicit archived conflict; it neither creates a duplicate nor restores the row.
+
+Transaction insert/update delegates to `TransactionDao` transactional methods. They resolve the active canonical spelling or register a new catalog row before writing the transaction, so catalog registration and transaction persistence cannot partially commit. Editing may keep the same normalized archived category already stored on that historical record, but another transaction cannot newly select it. Existing filters, statistics, Home, wallets and CSV remain transaction-string consumers, so they require no join and preserve archived historical values.
+
 ## Testing strategy
 
 Test domain rules with local unit tests; test repository mapping and observable updates when Room is introduced; add focused UI tests for important user flows. Each roadmap task names the checks that prove its acceptance criteria.

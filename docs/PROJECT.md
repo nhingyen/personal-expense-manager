@@ -19,6 +19,8 @@ Kotlin, Jetpack Compose, Material 3, MVVM plus Clean Architecture, a single `:ap
 
 ## Current state
 
+TASK-016 adds a Room v3 custom-category catalog and management UI: non-destructive v2 to v3 migration, Unicode-aware case-insensitive identity, atomic rename and transaction registration/save, archive/restore, guarded delete, and active-category selection in Add/Edit. Historical transaction category strings remain the compatibility boundary for filters, statistics, Home, wallets and CSV export. See [TASK-016](../tasks/TASK-016.md).
+
 TASK-014 audits the Offline-only release, fixes confirmed backup-policy and pending-transaction-write defects, and records current Gradle/device evidence. Automatic Gradle signing is not configured. Signed v2 was verified and archived; source is versionCode 3/name 1.0.0. The user-signed v3 verifies with the same Release certificate. The dedicated API 35 v2 → v3 upgrade passed preflight, install -r, both post-install/cold-launch Room/preferences/locale comparisons, UI totals and the TASK-015 icon on Home Screen/App Drawer. API 26 runtime, remote CI and remaining manual checks remain release gates. See the [final audit report](RELEASE_AUDIT_v1.0.0.md) and [signed-upgrade report](SIGNED_UPGRADE_v2_v3.md); historical task test counts are not current release certification.
 
 The latest Final Release Verification continuation passed a fresh 98-test unit

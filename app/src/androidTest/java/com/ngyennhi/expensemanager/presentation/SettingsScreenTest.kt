@@ -26,10 +26,12 @@ class SettingsScreenTest {
     @Test fun largeTextKeepsChoicesAndAboutReachableInDarkTheme() {
         var language: AppLanguage? = null
         var theme: AppTheme? = null
+        var categories = 0
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 2f)) {
                 PersonalExpenseManagerTheme(darkTheme = true) {
-                    SettingsScreen(SettingsUiState(isLoading = false), { language = it }, { theme = it }, {}, {}, {})
+                    SettingsScreen(SettingsUiState(isLoading = false), { language = it }, { theme = it }, {}, {}, {},
+                        { categories++ })
                 }
             }
         }
@@ -39,6 +41,8 @@ class SettingsScreenTest {
         assertEquals(AppTheme.DARK, theme)
         compose.onNodeWithTag("settings_version").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("settings_export_csv").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("settings_categories").performScrollTo().assertIsDisplayed().performClick()
+        assertEquals(1, categories)
     }
 
     @Test fun readFailureBlocksWritesAndExposesRetry() {
