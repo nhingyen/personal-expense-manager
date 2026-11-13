@@ -34,11 +34,18 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 - Search and filter transactions by type, category and date.
 - View category charts and six-month income/expense comparisons.
 - Choose Vietnamese/English and Light/Dark/System appearance.
+- Export every saved transaction to a user-selected CSV file without network or broad storage access.
 - Open and use every financial feature without an account or network.
 
 Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
 
 Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
+
+Settings can export a read-only transaction snapshot through Android's document
+picker. The UTF-8 CSV uses stable, language-neutral columns for transaction and
+wallet data; it is not an importable app backup and does not change local records.
+An empty database produces a header-only file. User-entered text is escaped for
+CSV and guarded against spreadsheet-formula interpretation.
 
 ## Future Improvements
 

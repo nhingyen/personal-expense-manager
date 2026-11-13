@@ -364,7 +364,7 @@ class HomeFlowTest {
     fun launchesHomeAndDirectAddSaveCreatesListAndUpdatesHome() {
         composeRule.onNodeWithTag("home_greeting").assertExists()
         assertTrue(home.uiState.value.isEmpty)
-        composeRule.onNodeWithTag("home_add").performClick()
+        composeRule.onNodeWithTag("home_add").performScrollTo().performClick()
         composeRule.onNodeWithTag("amount_input").performTextInput("85000")
         composeRule.onNodeWithTag("category_input").performTextInput("Food")
         Espresso.closeSoftKeyboard()
@@ -438,7 +438,7 @@ class HomeFlowTest {
 
     @Test
     fun cancelAddAndEditDoNotWriteAndBackReturnsToInvoker() {
-        composeRule.onNodeWithTag("home_add").performClick()
+        composeRule.onNodeWithTag("home_add").performScrollTo().performClick()
         composeRule.onNodeWithTag("amount_input").performTextInput("123")
         Espresso.closeSoftKeyboard()
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()

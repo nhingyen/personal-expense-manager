@@ -172,4 +172,10 @@
     <string name="settings_version">Version %1$s</string>
     <string name="settings_read_error">Could not load appearance preferences. Try again.</string>
     <string name="settings_write_error">Could not save your preference. Select it again to retry.</string>
+    <string name="settings_data_management">DATA MANAGEMENT</string>
+    <string name="settings_export_data">Export data</string>
+    <string name="settings_export_success">CSV file saved.</string>
+    <string name="settings_export_unavailable">Could not read transaction data. Tap Export data to retry.</string>
+    <string name="settings_export_write_failed">Could not save the CSV. The incomplete file was emptied.</string>
+    <string name="settings_export_partial_file">Export could not finish. Check and delete the potentially incomplete file at the selected location.</string>
 </resources>
