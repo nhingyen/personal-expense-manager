@@ -6,6 +6,7 @@ import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.domain.repository.TransactionRepository
+import com.ngyennhi.expensemanager.domain.repository.ArchivedCategoryException
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.ObserveTransactionsUseCase
@@ -21,6 +22,7 @@ import java.time.YearMonth
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
@@ -226,6 +228,19 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun archivedFreeTextIsAFieldErrorAndDoesNotNavigate() = runTest {
+        runCurrent()
+        repository.archivedWrite = true
+        viewModel.startAdd()
+        viewModel.setAmount("100")
+        viewModel.setCategory("Archived")
+        viewModel.save()
+        runCurrent()
+        assertEquals(FieldError.CATEGORY_ARCHIVED, viewModel.uiState.value.form.categoryError)
+        assertEquals(null, withTimeoutOrNull(1) { viewModel.navigationEvents.first() })
+    }
+
+    @Test
     fun reopeningAddCannotUnlockAnInFlightSaveAndCreateADuplicate() = runTest {
         runCurrent()
         repository.addGate = CompletableDeferred()
@@ -409,6 +424,7 @@ class TransactionViewModelTest {
         var observationGate: CompletableDeferred<Unit>? = null
         var failObservation = false
         var failWrite = false
+        var archivedWrite = false
         var updateResult = true
         var deleteResult = true
 
@@ -422,6 +438,7 @@ class TransactionViewModelTest {
         override suspend fun add(transaction: TransactionDraft): Long {
             addCalls++
             addGate?.await()
+            if (archivedWrite) throw ArchivedCategoryException()
             if (failWrite) throw IllegalStateException("Write failed")
             val id = (records.value.maxOfOrNull { it.id } ?: 0) + 1
             records.value = listOf(Transaction(id, transaction.type, transaction.amountVnd,
@@ -430,6 +447,7 @@ class TransactionViewModelTest {
         }
 
         override suspend fun update(transaction: Transaction): Boolean {
+            if (archivedWrite) throw ArchivedCategoryException()
             if (failWrite) throw IllegalStateException("Write failed")
             if (!updateResult || records.value.none { it.id == transaction.id }) return false
             records.value = records.value.map { if (it.id == transaction.id) transaction else it }

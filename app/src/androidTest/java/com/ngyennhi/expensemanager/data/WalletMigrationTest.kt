@@ -122,7 +122,7 @@ class WalletMigrationTest {
                 val db = open()
                 try {
                     assertEquals(listOf(expected), RoomTransactionRepository(db.transactionDao()).observeTransactions().first())
-                    assertEquals(2, db.openHelper.readableDatabase.version)
+                    assertEquals(3, db.openHelper.readableDatabase.version)
                     db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { cursor ->
                         assertFalse(cursor.moveToFirst())
                     }
@@ -135,5 +135,5 @@ class WalletMigrationTest {
     }
     private fun open() = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name)
         .addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET)
-        .addMigrations(ExpenseManagerDatabase.MIGRATION_1_2).build()
+        .addMigrations(ExpenseManagerDatabase.MIGRATION_1_2, ExpenseManagerDatabase.MIGRATION_2_3).build()
 }

@@ -13,3 +13,6 @@ interface TransactionRepository {
 
     suspend fun delete(id: Long): Boolean
 }
+
+/** Expected write rejection when new free text resolves to an archived catalog row. */
+class ArchivedCategoryException : IllegalStateException("Category is archived")

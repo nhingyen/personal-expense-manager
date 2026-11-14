@@ -178,4 +178,26 @@
     <string name="settings_export_unavailable">Không thể đọc dữ liệu giao dịch. Chạm Xuất dữ liệu để thử lại.</string>
     <string name="settings_export_write_failed">Không thể lưu tệp CSV. Tệp chưa hoàn chỉnh đã được làm trống.</string>
     <string name="settings_export_partial_file">Không thể hoàn tất xuất dữ liệu. Hãy kiểm tra và xóa tệp có thể chưa hoàn chỉnh tại vị trí đã chọn.</string>
+    <!-- TASK-016 Custom Categories -->
+    <string name="categories_manage_title">Quản lý danh mục</string>
+    <string name="categories_manage_hint">Sắp xếp thu chi theo cách của bạn. Danh mục đã lưu trữ vẫn được giữ trong giao dịch cũ.</string>
+    <string name="category_expense_heading">Danh mục chi tiêu</string>
+    <string name="category_income_heading">Danh mục thu nhập</string>
+    <string name="category_add">Thêm danh mục</string>
+    <string name="category_edit">Sửa danh mục</string>
+    <string name="category_name">Tên danh mục</string>
+    <string name="category_empty">Chưa có danh mục đang hoạt động.</string>
+    <string name="category_archived">Đã lưu trữ</string>
+    <string name="category_archived_heading">Đã lưu trữ</string>
+    <string name="category_archive">Lưu trữ</string>
+    <string name="category_restore">Khôi phục</string>
+    <string name="category_delete">Xóa danh mục</string>
+    <string name="category_delete_confirm">Xóa danh mục không được sử dụng này? Không thể hoàn tác.</string>
+    <string name="category_name_invalid">Nhập tên từ 1 đến 60 ký tự.</string>
+    <string name="category_duplicate">Tên này đã tồn tại cho cùng loại giao dịch.</string>
+    <string name="category_archived_input">Danh mục này đã được lưu trữ. Hãy khôi phục hoặc chọn tên khác.</string>
+    <string name="category_read_error">Không tải được danh mục. Vui lòng thử lại.</string>
+    <string name="category_write_error">Không lưu được thay đổi. Dữ liệu nhập vẫn được giữ lại.</string>
+    <string name="category_delete_in_use">Không thể xóa danh mục có giao dịch. Bạn có thể lưu trữ danh mục đó.</string>
+    <string name="category_unavailable">Danh mục không còn tồn tại.</string>
 </resources>
