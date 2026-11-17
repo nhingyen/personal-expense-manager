@@ -117,6 +117,14 @@ Category rename is one Room transaction: it changes the catalog row and every hi
 
 Transaction insert/update delegates to `TransactionDao` transactional methods. They resolve the active canonical spelling or register a new catalog row before writing the transaction, so catalog registration and transaction persistence cannot partially commit. Editing may keep the same normalized archived category already stored on that historical record, but another transaction cannot newly select it. Existing filters, statistics, Home, wallets and CSV remain transaction-string consumers, so they require no join and preserve archived historical values.
 
+## Category-based Budgets (TASK-017)
+
+Room v4 adds `category_budgets`, keyed by category ID, year and month, with a restrictive foreign key to the v3 category catalog. Stable category IDs let rename preserve limits without cross-store coordination. Archive preserves limits; hard delete remains guarded while either historical transactions or category budgets reference the category. `MIGRATION_3_4` is additive and leaves transactions, wallets, categories and the existing `monthly_budgets` preferences unchanged.
+
+`CategoryBudgetRepository` is a pure domain contract implemented by Room. Transactional writes accept only positive limits for active expense categories; removal remains available for an archived category. Pure calculation reuses the existing transaction and category snapshots, matches expense strings with the v3 `trim().lowercase(Locale.ROOT)` rule, performs checked `Long` summation and uses `BigInteger` for percentage arithmetic. Missing or duplicate catalog mappings are explicit inconsistent snapshots, not zero spending.
+
+HomeViewModel retains its single transaction observer and separately combines category-catalog and category-budget flows. A calculation replaces UI rows only when all three cached snapshots are coherent. Inconsistent rename emissions, read failure or overflow retain the last valid category rows as explicitly stale and expose Retry; a later coherent emission recovers automatically. The selected month is shared with the existing monthly budget sheet. One pending monthly/category write blocks month changes, drafts, dismissal and competing actions. Compose renders compact Figma-adapted category cards and adds reached/exceeded items to the existing in-app notices; it does not deliver OS notifications.
+
 ## Testing strategy
 
 Test domain rules with local unit tests; test repository mapping and observable updates when Room is introduced; add focused UI tests for important user flows. Each roadmap task names the checks that prove its acceptance criteria.

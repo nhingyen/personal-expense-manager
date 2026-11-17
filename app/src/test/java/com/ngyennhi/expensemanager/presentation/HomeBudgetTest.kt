@@ -22,6 +22,8 @@ import org.junit.Test
 class HomeBudgetTest {
     private val dispatcher = StandardTestDispatcher()
     private val budgets = FakeMonthlyBudgetRepository()
+    private val categories = FakeCategoryRepository()
+    private val categoryBudgets = FakeCategoryBudgetRepository()
     private val records = MutableStateFlow<List<Transaction>>(emptyList())
     private val month = YearMonth.of(2026, 10)
     private val store = ViewModelStore()
@@ -37,7 +39,9 @@ class HomeBudgetTest {
     private fun model(handle: SavedStateHandle = SavedStateHandle(mapOf("dashboard_selected_month" to month.toString()))) =
         HomeViewModel(ObserveTransactionsUseCase(transactions), CalculateMonthlySummaryUseCase(),
         handle, ObserveMonthlyBudgetsUseCase(budgets),
-        SaveMonthlyBudgetUseCase(budgets), CalculateMonthlyBudgetUseCase()).also { store.put("home", it) }
+        SaveMonthlyBudgetUseCase(budgets), CalculateMonthlyBudgetUseCase(),
+        ObserveCategoriesUseCase(categories), ObserveCategoryBudgetsUseCase(categoryBudgets),
+        SaveCategoryBudgetUseCase(categoryBudgets), CalculateCategoryBudgetsUseCase()).also { store.put("home", it) }
 
     @Test fun loadingUnsetAndConfiguredLimitsAreDistinctAndReactToExpenseUpdates() = runTest(dispatcher) {
         budgets.gate = CompletableDeferred()
@@ -262,5 +266,91 @@ class HomeBudgetTest {
         assertEquals(150L, restored.uiState.value.budget?.remainingVnd)
         assertEquals("300", restored.uiState.value.budgetInput)
         assertEquals(1, budgets.maxActive)
+    }
+
+    @Test fun categoryBudgetsReactAndRetainLastValidResultAcrossRenameEmissions() = runTest(dispatcher) {
+        val food = Category(1, TransactionType.EXPENSE, "Food", false)
+        categories.categories.value = listOf(food)
+        categoryBudgets.limits.value = listOf(CategoryBudgetLimit(food.id, month, 100))
+        records.value = listOf(Transaction(1, TransactionType.EXPENSE, 50, "fOoD", month.atDay(1), null))
+        val model = model(); runCurrent()
+
+        assertEquals(HomeLoadStatus.READY, model.uiState.value.categoryBudgetLoadStatus)
+        assertEquals(50L, model.uiState.value.categoryBudgetItems.single().budget.spentVnd)
+        categories.categories.value = listOf(food.copy(name = "Dining")); runCurrent()
+        assertEquals(HomeLoadStatus.ERROR, model.uiState.value.categoryBudgetLoadStatus)
+        assertEquals(CategoryBudgetError.INCONSISTENT_SNAPSHOT, model.uiState.value.categoryBudgetError)
+        assertTrue(model.uiState.value.categoryBudgetStale)
+        assertEquals("Food", model.uiState.value.categoryBudgetItems.single().category.name)
+        assertEquals(50L, model.uiState.value.categoryBudgetItems.single().budget.spentVnd)
+
+        records.value = listOf(records.value.single().copy(category = "Dining")); runCurrent()
+        assertEquals(HomeLoadStatus.READY, model.uiState.value.categoryBudgetLoadStatus)
+        assertFalse(model.uiState.value.categoryBudgetStale)
+        assertEquals("Dining", model.uiState.value.categoryBudgetItems.single().category.name)
+        assertEquals(50L, model.uiState.value.categoryBudgetItems.single().budget.spentVnd)
+    }
+
+    @Test fun categoryEditorUsesActiveExpensesAndPendingWriteLocksMonthAndDraft() = runTest(dispatcher) {
+        val food = Category(1, TransactionType.EXPENSE, "Food", false)
+        val old = Category(2, TransactionType.EXPENSE, "Old", true)
+        val salary = Category(3, TransactionType.INCOME, "Salary", false)
+        categories.categories.value = listOf(food, old, salary)
+        categoryBudgets.limits.value = listOf(CategoryBudgetLimit(old.id, month, 80))
+        val model = model(); runCurrent()
+
+        assertEquals(listOf(food.id), model.uiState.value.activeExpenseCategories.map { it.id })
+        assertTrue(model.uiState.value.categoryBudgetItems.single().category.isArchived)
+        model.startEditCategoryBudget(old.id)
+        assertNull(model.uiState.value.categoryBudgetEditor)
+        model.startAddCategoryBudget()
+        assertEquals(food.id, model.uiState.value.categoryBudgetEditor?.categoryId)
+        model.setCategoryBudgetInput("0"); model.saveCategoryBudget()
+        assertTrue(model.uiState.value.categoryBudgetEditor?.inputInvalid == true)
+
+        categoryBudgets.writeGate = CompletableDeferred()
+        model.setCategoryBudgetInput("120"); model.saveCategoryBudget(); runCurrent()
+        assertTrue(model.uiState.value.isSavingCategoryBudget)
+        model.changeMonth(1); model.setCategoryBudgetInput("999"); model.dismissCategoryBudgetEditor()
+        assertEquals(month, model.uiState.value.selectedMonth)
+        assertEquals("120", model.uiState.value.categoryBudgetEditor?.input)
+        assertEquals(1, categoryBudgets.writes)
+        categoryBudgets.writeGate!!.complete(Unit); runCurrent()
+        assertFalse(model.uiState.value.isSavingCategoryBudget)
+        assertNull(model.uiState.value.categoryBudgetEditor)
+        assertEquals(setOf(food.id, old.id), model.uiState.value.categoryBudgetItems.map { it.category.id }.toSet())
+
+        model.startEditCategoryBudget(food.id)
+        assertNotNull(model.uiState.value.categoryBudgetEditor)
+        categories.categories.value = listOf(food.copy(isArchived = true), old, salary); runCurrent()
+        assertNull(model.uiState.value.categoryBudgetEditor)
+
+        model.removeCategoryBudget(old.id); runCurrent()
+        assertEquals(listOf(food.id), model.uiState.value.categoryBudgetItems.map { it.category.id })
+    }
+
+    @Test fun categoryBudgetFailureRetainsDraftAndRetryRecoversCollector() = runTest(dispatcher) {
+        val food = Category(1, TransactionType.EXPENSE, "Food", false)
+        categories.categories.value = listOf(food)
+        val model = model(); runCurrent()
+        model.startAddCategoryBudget(); model.setCategoryBudgetInput("100")
+        categoryBudgets.failWrite = true
+        model.saveCategoryBudget(); runCurrent()
+        assertTrue(model.uiState.value.categoryBudgetEditor?.writeFailed == true)
+        assertEquals("100", model.uiState.value.categoryBudgetEditor?.input)
+
+        categoryBudgets.failWrite = false
+        model.saveCategoryBudget(); runCurrent()
+        assertNull(model.uiState.value.categoryBudgetEditor)
+        assertEquals(100L, model.uiState.value.categoryBudgetItems.single().budget.limitVnd)
+
+        categoryBudgets.failObservation = true
+        model.retryCategoryBudgets(); runCurrent()
+        assertEquals(CategoryBudgetError.LOAD_FAILED, model.uiState.value.categoryBudgetError)
+        assertTrue(model.uiState.value.categoryBudgetStale)
+        categoryBudgets.failObservation = false
+        model.retryCategoryBudgets(); runCurrent()
+        assertEquals(HomeLoadStatus.READY, model.uiState.value.categoryBudgetLoadStatus)
+        assertEquals(1, categoryBudgets.maxActive)
     }
 }

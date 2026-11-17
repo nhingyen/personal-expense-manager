@@ -117,6 +117,14 @@
                             onSaveBudget = homeViewModel::saveMonthlyBudget,
                             onClearBudget = homeViewModel::clearMonthlyBudget,
                             onRetryBudgets = homeViewModel::retryBudgets,
+                            onAddCategoryBudget = homeViewModel::startAddCategoryBudget,
+                            onEditCategoryBudget = homeViewModel::startEditCategoryBudget,
+                            onSelectCategoryBudgetCategory = homeViewModel::selectCategoryBudgetCategory,
+                            onCategoryBudgetInput = homeViewModel::setCategoryBudgetInput,
+                            onSaveCategoryBudget = homeViewModel::saveCategoryBudget,
+                            onRemoveCategoryBudget = homeViewModel::removeCategoryBudget,
+                            onDismissCategoryBudgetEditor = homeViewModel::dismissCategoryBudgetEditor,
+                            onRetryCategoryBudgets = homeViewModel::retryCategoryBudgets,
                             onChooseCategory = { category, type ->
                                 viewModel.startAdd()
                                 viewModel.setCategory(category)

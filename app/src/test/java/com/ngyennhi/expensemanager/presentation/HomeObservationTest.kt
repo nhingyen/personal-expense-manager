@@ -32,6 +32,8 @@ class HomeObservationTest {
     private val store = ViewModelStore()
     private val repository = Repository()
     private val budgets = FakeMonthlyBudgetRepository()
+    private val categories = FakeCategoryRepository()
+    private val categoryBudgets = FakeCategoryBudgetRepository()
     private val month = YearMonth.of(2026, 10)
 
     @Before fun setUp() { Dispatchers.setMain(dispatcher) }
@@ -39,7 +41,9 @@ class HomeObservationTest {
 
     private fun model(handle: SavedStateHandle = SavedStateHandle(mapOf("dashboard_selected_month" to month.toString()))) =
         HomeViewModel(ObserveTransactionsUseCase(repository), CalculateMonthlySummaryUseCase(), handle,
-            ObserveMonthlyBudgetsUseCase(budgets), SaveMonthlyBudgetUseCase(budgets), CalculateMonthlyBudgetUseCase())
+            ObserveMonthlyBudgetsUseCase(budgets), SaveMonthlyBudgetUseCase(budgets), CalculateMonthlyBudgetUseCase(),
+            ObserveCategoriesUseCase(categories), ObserveCategoryBudgetsUseCase(categoryBudgets),
+            SaveCategoryBudgetUseCase(categoryBudgets), CalculateCategoryBudgetsUseCase())
             .also { store.put("home", it) }
 
     @Test

@@ -36,6 +36,9 @@ interface CategoryDao {
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deleteById(id: Long): Int
 
+    @Query("SELECT EXISTS(SELECT 1 FROM category_budgets WHERE category_id = :id)")
+    suspend fun hasCategoryBudget(id: Long): Boolean
+
     @Transaction
     suspend fun createIfAbsent(entity: CategoryEntity): Long {
         if (find(entity.type, entity.normalizedName) != null) return CREATE_DUPLICATE
@@ -59,7 +62,7 @@ interface CategoryDao {
         val existing = findById(id) ?: return DELETE_NOT_FOUND
         val used = transactionCategoryNames(existing.type)
             .any { it.trim().lowercase(Locale.ROOT) == existing.normalizedName }
-        if (used) return DELETE_IN_USE
+        if (used || hasCategoryBudget(id)) return DELETE_IN_USE
         return if (deleteById(id) > 0) DELETE_DELETED else DELETE_NOT_FOUND
     }
 

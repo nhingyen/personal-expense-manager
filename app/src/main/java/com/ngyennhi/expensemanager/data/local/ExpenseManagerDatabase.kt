@@ -6,11 +6,16 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.util.Locale
 
-@Database(entities = [TransactionEntity::class, WalletEntity::class, CategoryEntity::class], version = 3, exportSchema = true)
+@Database(
+    entities = [TransactionEntity::class, WalletEntity::class, CategoryEntity::class, CategoryBudgetEntity::class],
+    version = 4,
+    exportSchema = true,
+)
 abstract class ExpenseManagerDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun walletDao(): WalletDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun categoryBudgetDao(): CategoryBudgetDao
 
     companion object {
         private const val DEFAULT_WALLET_SQL = "INSERT OR IGNORE INTO wallets (id, name, type, opening_balance_vnd) VALUES (1, '', 'CASH', 0)"
@@ -53,6 +58,12 @@ abstract class ExpenseManagerDatabase : RoomDatabase() {
                         }
                     }
                 }
+            }
+        }
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS category_budgets (category_id INTEGER NOT NULL, year INTEGER NOT NULL, month INTEGER NOT NULL, limit_vnd INTEGER NOT NULL, PRIMARY KEY(category_id, year, month), FOREIGN KEY(category_id) REFERENCES categories(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_category_budgets_category_id ON category_budgets(category_id)")
             }
         }
     }
