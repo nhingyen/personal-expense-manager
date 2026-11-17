@@ -56,7 +56,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ngyennhi.expensemanager.R
+import com.ngyennhi.expensemanager.domain.model.MAX_TRANSACTION_NOTE_LENGTH
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.model.normalizedCategoryName
+import com.ngyennhi.expensemanager.presentation.category.CategoryUiState
+import com.ngyennhi.expensemanager.domain.model.transactionNoteLength
+import com.ngyennhi.expensemanager.domain.model.truncateTransactionNote
 import com.ngyennhi.expensemanager.presentation.common.components.AppTopBar
 import com.ngyennhi.expensemanager.ui.theme.appearanceIconFilter
 import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
@@ -78,6 +83,7 @@ internal fun TransactionFormScreen(
     walletState: com.ngyennhi.expensemanager.presentation.wallet.WalletUiState? = null,
     onWalletChange: (Long) -> Unit = {},
     onRetryWallets: () -> Unit = {},
+    categoryState: CategoryUiState = CategoryUiState(),
 ) {
     val form = state.form
     BackHandler(enabled = form.isSaving) { /* Wait for the confirmed write result. */ }
@@ -167,10 +173,11 @@ internal fun TransactionFormScreen(
                             isError = form.categoryError != null,
                             shape = RoundedCornerShape(14.dp),
                         )
-                        val categoryOptions = suggestedCategories(form.type)
+                        val suggested = suggestedCategories(form.type).map { stringResource(it) }
+                        val categoryOptions = (suggested + categoryState.active(form.type).map { it.name })
+                            .distinctBy { it.normalizedCategoryName() }
                         DropdownMenu(expanded = showCategories, onDismissRequest = { showCategories = false }) {
-                            categoryOptions.forEach { label ->
-                                val categoryName = stringResource(label)
+                            categoryOptions.forEach { categoryName ->
                                 DropdownMenuItem(text = { Text(categoryName) }, onClick = {
                                     onCategoryChange(categoryName)
                                     showCategories = false
@@ -178,7 +185,14 @@ internal fun TransactionFormScreen(
                             }
                         }
                     }
-                    FieldErrorText(form.categoryError?.let { R.string.field_required })
+                    FieldErrorText(form.categoryError?.let {
+                        when (it) {
+                            FieldError.REQUIRED -> R.string.field_required
+                            FieldError.INVALID_CATEGORY -> R.string.category_name_invalid
+                            FieldError.CATEGORY_ARCHIVED -> R.string.category_archived_input
+                            else -> R.string.category_name_invalid
+                        }
+                    })
                 }
                 Column {
                     Text(stringResource(R.string.transaction_date), style = MaterialTheme.typography.labelMedium,
@@ -206,13 +220,19 @@ internal fun TransactionFormScreen(
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = form.note,
-                        onValueChange = onNoteChange,
+                        onValueChange = { onNoteChange(it.truncateTransactionNote()) },
                         enabled = !form.isSaving,
                         modifier = Modifier.fillMaxWidth().testTag("note_input"),
                         placeholder = { Text(stringResource(R.string.note_hint)) },
                         minLines = 3,
                         shape = RoundedCornerShape(14.dp),
-                        supportingText = { Text(stringResource(R.string.note_count, form.note.length)) },
+                        supportingText = {
+                            Text(stringResource(
+                                R.string.note_count,
+                                form.note.transactionNoteLength(),
+                                MAX_TRANSACTION_NOTE_LENGTH,
+                            ))
+                        },
                     )
                 }
                 walletState?.let {

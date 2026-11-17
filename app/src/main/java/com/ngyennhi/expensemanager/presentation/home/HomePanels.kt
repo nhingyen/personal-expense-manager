@@ -32,6 +32,14 @@ data class HomeActions(
     val onClearBudget: () -> Unit,
     val onRetryBudgets: () -> Unit,
     val onChooseCategory: (String, TransactionType) -> Unit,
+    val onAddCategoryBudget: () -> Unit = {},
+    val onEditCategoryBudget: (Long) -> Unit = {},
+    val onSelectCategoryBudgetCategory: (Long) -> Unit = {},
+    val onCategoryBudgetInput: (String) -> Unit = {},
+    val onSaveCategoryBudget: () -> Unit = {},
+    val onRemoveCategoryBudget: (Long) -> Unit = {},
+    val onDismissCategoryBudgetEditor: () -> Unit = {},
+    val onRetryCategoryBudgets: () -> Unit = {},
 )
 
 internal enum class HomePanel { BUDGET, CATEGORIES, NOTIFICATIONS }
@@ -48,7 +56,7 @@ internal fun HomePanelSheet(
     onNextMonth: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val blockDismiss by rememberUpdatedState(panel == HomePanel.BUDGET && state.isSavingBudget)
+    val blockDismiss by rememberUpdatedState(panel == HomePanel.BUDGET && state.isWritingAnyBudget)
     ModalBottomSheet(onDismissRequest = { if (!blockDismiss) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,
             confirmValueChange = { it != SheetValue.Hidden || !blockDismiss }),
@@ -63,7 +71,7 @@ internal fun HomePanelSheet(
             }), style = MaterialTheme.typography.headlineSmall)
             if (panel == HomePanel.BUDGET) {
                 MonthSelector(formatMonth(state.selectedMonth, locale), onPreviousMonth, onNextMonth,
-                    enabled = !state.isSavingBudget)
+                    enabled = !state.isWritingAnyBudget)
             } else {
                 Text(formatMonth(state.selectedMonth, locale), style = MaterialTheme.typography.labelMedium)
             }
@@ -77,13 +85,20 @@ internal fun HomePanelSheet(
                         style = MaterialTheme.typography.bodySmall)
                     MonthlyBudgetOverview(state, locale)
                     BudgetEditor(state, actions)
-                    TextButton(onClick = onDismiss, enabled = !state.isSavingBudget,
+                    CategoryBudgetSection(state, locale, actions)
+                    TextButton(onClick = onDismiss, enabled = !state.isWritingAnyBudget,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                         Text(stringResource(R.string.cancel))
                     }
                 }
                 HomePanel.CATEGORIES -> CategoryChooser(state, actions, onDismiss)
-                HomePanel.NOTIFICATIONS -> BudgetNotifications(state, locale, actions.onRetryBudgets, onRetryTransactions)
+                HomePanel.NOTIFICATIONS -> BudgetNotifications(
+                    state,
+                    locale,
+                    actions.onRetryBudgets,
+                    actions.onRetryCategoryBudgets,
+                    onRetryTransactions,
+                )
             }
         }
     }
@@ -101,17 +116,17 @@ private fun BudgetEditor(state: HomeUiState, actions: HomeActions) {
                 label = { Text(stringResource(R.string.home_budget_limit)) },
                 suffix = { Text(stringResource(R.string.vnd_suffix)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                isError = state.budgetInputInvalid, enabled = !state.isSavingBudget,
+                isError = state.budgetInputInvalid, enabled = !state.isWritingAnyBudget,
                 supportingText = { if (state.budgetInputInvalid) Text(stringResource(R.string.amount_invalid)) },
                 shape = RoundedCornerShape(14.dp),
             )
             if (state.budgetSaveFailed) ErrorBanner(stringResource(R.string.home_budget_save_error))
-            Button(onClick = actions.onSaveBudget, enabled = !state.isSavingBudget,
+            Button(onClick = actions.onSaveBudget, enabled = !state.isWritingAnyBudget,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp).testTag("home_budget_save")) {
                 Text(stringResource(if (state.isSavingBudget) R.string.saving_transaction else R.string.home_save_budget))
             }
             if (state.budgetLimitVnd != null) {
-                TextButton(onClick = actions.onClearBudget, enabled = !state.isSavingBudget,
+                TextButton(onClick = actions.onClearBudget, enabled = !state.isWritingAnyBudget,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("home_budget_clear")) {
                     Text(stringResource(R.string.home_clear_budget), color = ExpenseManagerColors.expense)
                 }
@@ -148,19 +163,51 @@ private fun CategoryChooser(state: HomeUiState, actions: HomeActions, onDismiss:
 }
 
 @Composable
-private fun BudgetNotifications(state: HomeUiState, locale: Locale, onRetryBudgets: () -> Unit, onRetryTransactions: () -> Unit) {
+private fun BudgetNotifications(
+    state: HomeUiState,
+    locale: Locale,
+    onRetryBudgets: () -> Unit,
+    onRetryCategoryBudgets: () -> Unit,
+    onRetryTransactions: () -> Unit,
+) {
     when {
         state.budgetLoadStatus == HomeLoadStatus.ERROR -> ErrorBanner(stringResource(R.string.home_budget_load_error), onRetryBudgets)
         state.error != null -> ErrorBanner(stringResource(if (state.error == HomeError.CALCULATION_OVERFLOW)
             R.string.home_calculation_error else R.string.home_load_error), onRetryTransactions)
-        state.budgetLoadStatus == HomeLoadStatus.LOADING || state.loadStatus == HomeLoadStatus.LOADING -> CircularProgressIndicator()
-        state.budget?.limitReached == true -> {
-            val budget = state.budget
-            Text(if (budget.remainingVnd < 0) stringResource(R.string.home_budget_exceeded, homeVnd(-budget.remainingVnd, locale))
-                else stringResource(R.string.home_budget_reached), style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("home_budget_notice"))
+        state.budgetLoadStatus == HomeLoadStatus.LOADING || state.loadStatus == HomeLoadStatus.LOADING ||
+            state.categoryBudgetLoadStatus == HomeLoadStatus.LOADING -> CircularProgressIndicator()
+        else -> {
+            if (state.categoryBudgetError != null) {
+                ErrorBanner(stringResource(categoryBudgetErrorMessage(state.categoryBudgetError)), onRetryCategoryBudgets)
+            }
+            val reachedCategories = state.categoryBudgetItems.filter { it.budget.limitReached }
+            if (state.budget?.limitReached == true) {
+                val budget = state.budget
+                Text(if (budget.remainingVnd < 0) stringResource(R.string.home_budget_exceeded, homeVnd(-budget.remainingVnd, locale))
+                    else stringResource(R.string.home_budget_reached), style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("home_budget_notice"))
+            }
+            reachedCategories.forEach { item ->
+                Text(
+                    if (item.budget.remainingVnd < 0) stringResource(
+                        R.string.category_budget_exceeded_notice,
+                        item.category.name,
+                        homeVnd(-item.budget.remainingVnd, locale),
+                    ) else stringResource(R.string.category_budget_reached_notice, item.category.name),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("category_budget_notice_${item.category.id}"),
+                )
+            }
+            if (state.budget?.limitReached != true && reachedCategories.isEmpty() && state.categoryBudgetError == null) {
+                Text(stringResource(R.string.home_no_notifications), style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("home_no_notifications"))
+            }
         }
-        else -> Text(stringResource(R.string.home_no_notifications), style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.testTag("home_no_notifications"))
     }
+}
+
+internal fun categoryBudgetErrorMessage(error: CategoryBudgetError) = when (error) {
+    CategoryBudgetError.LOAD_FAILED -> R.string.category_budget_load_error
+    CategoryBudgetError.INCONSISTENT_SNAPSHOT -> R.string.category_budget_snapshot_error
+    CategoryBudgetError.CALCULATION_OVERFLOW -> R.string.category_budget_overflow
 }

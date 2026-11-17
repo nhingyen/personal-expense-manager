@@ -17,12 +17,16 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ngyennhi.expensemanager.R
 import com.ngyennhi.expensemanager.domain.model.MonthlyBudget
 import com.ngyennhi.expensemanager.domain.model.MonthlySummary
+import com.ngyennhi.expensemanager.domain.model.Category
+import com.ngyennhi.expensemanager.domain.model.CategoryBudget
+import com.ngyennhi.expensemanager.domain.model.TransactionType
 import com.ngyennhi.expensemanager.presentation.home.*
 import com.ngyennhi.expensemanager.ui.theme.PersonalExpenseManagerTheme
 import java.io.File
 import java.time.YearMonth
 import java.util.Locale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,5 +107,82 @@ class MonthlyBudgetScreenTest {
         composeRule.onNodeWithTag("budget_overview_spent").performScrollTo().assertTextContains(homeVnd(Long.MAX_VALUE, locale))
         composeRule.onNodeWithTag("budget_overview_remaining").performScrollTo().assertTextContains(homeVnd(1 - Long.MAX_VALUE, locale))
         composeRule.onNodeWithTag("home_budget_save").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun categoryCardsShowExactProgressWarningsAndArchivedRemoval() {
+        val active = Category(1, TransactionType.EXPENSE, "Food", false)
+        val archived = Category(2, TransactionType.EXPENSE, "Old", true)
+        var edited: Long? = null
+        var removed: Long? = null
+        val categoryActions = actions.copy(
+            onEditCategoryBudget = { edited = it },
+            onRemoveCategoryBudget = { removed = it },
+        )
+        val state = ready(0, null).copy(
+            categoryBudgetLoadStatus = HomeLoadStatus.READY,
+            categoryBudgetItems = listOf(
+                CategoryBudgetItem(active, CategoryBudget(active.id, month, 100, 150)),
+                CategoryBudgetItem(archived, CategoryBudget(archived.id, month, 80, 20)),
+            ),
+            activeExpenseCategories = listOf(active),
+        )
+        val locale = context.resources.configuration.locales[0]
+        composeRule.setContent {
+            PersonalExpenseManagerTheme {
+                HomePanelSheet(HomePanel.BUDGET, state, locale, categoryActions, {}, {}, {}, {})
+            }
+        }
+
+        composeRule.onNodeWithTag("category_budget_1").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Food").assertExists()
+        composeRule.onNodeWithText(context.getString(
+            R.string.category_budget_spent_limit,
+            homeVnd(150, locale),
+            homeVnd(100, locale),
+        )).assertExists()
+        composeRule.onNodeWithTag("category_budget_warning_1")
+            .assertTextEquals(context.getString(R.string.category_budget_exceeded, homeVnd(50, locale)))
+        val progress = composeRule.onNodeWithTag("category_budget_progress_1").fetchSemanticsNode()
+            .config[SemanticsProperties.ProgressBarRangeInfo]
+        assertEquals(1f, progress.current, 0f)
+        composeRule.onNodeWithTag("category_budget_archived_2").performScrollTo().assertExists()
+        composeRule.onNodeWithTag("category_budget_edit_2").assertDoesNotExist()
+        composeRule.onNodeWithTag("category_budget_edit_1").performClick()
+        composeRule.onNodeWithTag("category_budget_remove_2").performScrollTo().performClick()
+        composeRule.runOnIdle { assertEquals(1L, edited); assertEquals(2L, removed) }
+    }
+
+    @Test fun categoryEditorShowsOnlyAvailableActiveChoicesAndKeepsAccessibleActions() {
+        val food = Category(1, TransactionType.EXPENSE, "Food", false)
+        val travel = Category(2, TransactionType.EXPENSE, "Travel", false)
+        var selected: Long? = null
+        var input = ""
+        var saved = false
+        val categoryActions = actions.copy(
+            onSelectCategoryBudgetCategory = { selected = it },
+            onCategoryBudgetInput = { input = it },
+            onSaveCategoryBudget = { saved = true },
+        )
+        val state = ready(0, null).copy(
+            categoryBudgetLoadStatus = HomeLoadStatus.READY,
+            categoryBudgetItems = listOf(CategoryBudgetItem(food, CategoryBudget(food.id, month, 100, 0))),
+            activeExpenseCategories = listOf(food, travel),
+            categoryBudgetEditor = CategoryBudgetEditorState(categoryId = travel.id),
+        )
+        composeRule.setContent {
+            PersonalExpenseManagerTheme {
+                HomePanelSheet(HomePanel.BUDGET, state, Locale.ENGLISH, categoryActions, {}, {}, {}, {})
+            }
+        }
+
+        composeRule.onNodeWithTag("category_budget_choice_1").assertDoesNotExist()
+        composeRule.onNodeWithTag("category_budget_choice_2").performScrollTo().assertTextContains("Travel").performClick()
+        composeRule.onNodeWithTag("category_budget_input").performTextInput("250")
+        composeRule.onNodeWithTag("category_budget_save").performScrollTo().assertHasClickAction().performClick()
+        composeRule.runOnIdle {
+            assertEquals(2L, selected)
+            assertEquals("250", input)
+            assertTrue(saved)
+        }
     }
 }

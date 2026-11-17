@@ -64,7 +64,7 @@
     <string name="category_salary">Salary</string>
     <string name="transaction_row_summary">%1$s · %2$s</string>
     <string name="note_hint">Add a note (optional)</string>
-    <string name="note_count">%1$d/200 characters</string>
+    <string name="note_count">%1$d/%2$d characters</string>
     <string name="field_required">This field is required</string>
     <string name="amount_invalid">Enter a valid positive whole VND amount</string>
     <string name="save_transaction">Save transaction</string>
@@ -117,6 +117,23 @@
     <string name="home_choose_category_to_add">Choose a category to add a transaction.</string>
     <string name="home_budget_reached">You have used this month’s entire budget.</string>
     <string name="home_no_notifications">There are no budget notifications for this month.</string>
+    <string name="category_budgets_title">Category budgets</string>
+    <string name="category_budget_add">Add limit</string>
+    <string name="category_budget_edit">Edit</string>
+    <string name="category_budget_remove">Remove limit</string>
+    <string name="category_budget_limit">Category spending limit</string>
+    <string name="category_budget_empty">No category limits are set for this month.</string>
+    <string name="category_budget_spent_limit">%1$s / %2$s</string>
+    <string name="category_budget_remaining">%1$s remaining</string>
+    <string name="category_budget_reached">This category has used its entire limit.</string>
+    <string name="category_budget_exceeded">Limit exceeded by %1$s</string>
+    <string name="category_budget_reached_notice">%1$s has used its entire limit.</string>
+    <string name="category_budget_exceeded_notice">%1$s exceeded its limit by %2$s.</string>
+    <string name="category_budget_load_error">Category budgets could not be loaded. Please retry.</string>
+    <string name="category_budget_snapshot_error">Category data is temporarily inconsistent while updating. The last valid result is retained; retry if this continues.</string>
+    <string name="category_budget_overflow">Category spending exceeds the calculation limit. Review related transactions.</string>
+    <string name="category_budget_stale">Showing the last valid category-budget result.</string>
+    <string name="category_budget_save_error">The category limit could not be saved. Your input has been kept.</string>
     <string name="home_select_month">Choose month, currently viewing %1$s</string>
     <string name="home_choose_month">Choose month</string>
 
@@ -172,4 +189,32 @@
     <string name="settings_version">Version %1$s</string>
     <string name="settings_read_error">Could not load appearance preferences. Try again.</string>
     <string name="settings_write_error">Could not save your preference. Select it again to retry.</string>
+    <string name="settings_data_management">DATA MANAGEMENT</string>
+    <string name="settings_export_data">Export data</string>
+    <string name="settings_export_success">CSV file saved.</string>
+    <string name="settings_export_unavailable">Could not read transaction data. Tap Export data to retry.</string>
+    <string name="settings_export_write_failed">Could not save the CSV. The incomplete file was emptied.</string>
+    <string name="settings_export_partial_file">Export could not finish. Check and delete the potentially incomplete file at the selected location.</string>
+    <!-- TASK-016 Custom Categories -->
+    <string name="categories_manage_title">Manage categories</string>
+    <string name="categories_manage_hint">Organize income and expenses your way. Archived categories remain on historical transactions.</string>
+    <string name="category_expense_heading">Expense categories</string>
+    <string name="category_income_heading">Income categories</string>
+    <string name="category_add">Add category</string>
+    <string name="category_edit">Edit category</string>
+    <string name="category_name">Category name</string>
+    <string name="category_empty">No active categories yet.</string>
+    <string name="category_archived">Archived</string>
+    <string name="category_archived_heading">Archived</string>
+    <string name="category_archive">Archive</string>
+    <string name="category_restore">Restore</string>
+    <string name="category_delete">Delete category</string>
+    <string name="category_delete_confirm">Delete this unused category? This cannot be undone.</string>
+    <string name="category_name_invalid">Enter a name with 1 to 60 characters.</string>
+    <string name="category_duplicate">This name already exists for the same transaction type.</string>
+    <string name="category_archived_input">This category is archived. Restore it or choose another name.</string>
+    <string name="category_read_error">Categories could not be loaded. Please retry.</string>
+    <string name="category_write_error">The change could not be saved. Your input has been kept.</string>
+    <string name="category_delete_in_use">A category with transactions cannot be deleted. You can archive it instead.</string>
+    <string name="category_unavailable">This category is no longer available.</string>
 </resources>

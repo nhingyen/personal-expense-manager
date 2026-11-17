@@ -1,5 +1,6 @@
 package com.ngyennhi.expensemanager.domain
 
+import com.ngyennhi.expensemanager.domain.model.MAX_TRANSACTION_NOTE_LENGTH
 import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionType
@@ -56,6 +57,28 @@ class TransactionUseCasesTest {
     }
 
     @Test
+    fun addAndUpdateAcceptNotesAtUnicodeLimit() = runBlocking {
+        val note = "🙂".repeat(MAX_TRANSACTION_NOTE_LENGTH)
+        val candidate = draft(note = note)
+
+        assertEquals(37L, add(candidate))
+        assertTrue(update(candidate.saved()))
+        assertEquals(note, repository.added.single().note)
+        assertEquals(note, repository.updated.single().note)
+    }
+
+    @Test
+    fun addAndUpdateRejectNotesOverUnicodeLimitBeforeWriting() = runBlocking {
+        val candidate = draft(note = "🙂".repeat(MAX_TRANSACTION_NOTE_LENGTH + 1))
+
+        expectInvalid { add(candidate) }
+        expectInvalid { update(candidate.saved()) }
+
+        assertTrue(repository.added.isEmpty())
+        assertTrue(repository.updated.isEmpty())
+    }
+
+    @Test
     fun updateAndDeleteForwardResultsIncludingUnknownIds() = runBlocking {
         val saved = draft().saved()
         assertTrue(update(saved))
@@ -79,7 +102,8 @@ class TransactionUseCasesTest {
         amountVnd: Long = 500,
         category: String = "Food",
         type: TransactionType = TransactionType.EXPENSE,
-    ) = TransactionDraft(type, amountVnd, category, date, null)
+        note: String? = null,
+    ) = TransactionDraft(type, amountVnd, category, date, note)
 
     private fun TransactionDraft.saved() = Transaction(12L, type, amountVnd, category, date, note)
 

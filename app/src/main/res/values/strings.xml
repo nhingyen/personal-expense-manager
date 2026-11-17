@@ -64,7 +64,7 @@
     <string name="category_salary">Lương</string>
     <string name="transaction_row_summary">%1$s · %2$s</string>
     <string name="note_hint">Thêm ghi chú (không bắt buộc)</string>
-    <string name="note_count">%1$d/200 ký tự</string>
+    <string name="note_count">%1$d/%2$d ký tự</string>
     <string name="field_required">Trường này là bắt buộc</string>
     <string name="amount_invalid">Nhập số tiền VND nguyên dương hợp lệ</string>
     <string name="save_transaction">Lưu giao dịch</string>
@@ -117,6 +117,23 @@
     <string name="home_choose_category_to_add">Chọn danh mục để thêm giao dịch.</string>
     <string name="home_budget_reached">Bạn đã dùng hết ngân sách tháng này.</string>
     <string name="home_no_notifications">Chưa có thông báo ngân sách cho tháng này.</string>
+    <string name="category_budgets_title">Ngân sách danh mục</string>
+    <string name="category_budget_add">Thêm hạn mức</string>
+    <string name="category_budget_edit">Chỉnh sửa</string>
+    <string name="category_budget_remove">Xóa hạn mức</string>
+    <string name="category_budget_limit">Hạn mức chi tiêu danh mục</string>
+    <string name="category_budget_empty">Chưa có hạn mức danh mục cho tháng này.</string>
+    <string name="category_budget_spent_limit">%1$s / %2$s</string>
+    <string name="category_budget_remaining">Còn lại %1$s</string>
+    <string name="category_budget_reached">Đã dùng hết hạn mức danh mục.</string>
+    <string name="category_budget_exceeded">Vượt hạn mức %1$s</string>
+    <string name="category_budget_reached_notice">%1$s đã dùng hết hạn mức.</string>
+    <string name="category_budget_exceeded_notice">%1$s đã vượt hạn mức %2$s.</string>
+    <string name="category_budget_load_error">Không tải được ngân sách danh mục. Hãy thử lại.</string>
+    <string name="category_budget_snapshot_error">Dữ liệu danh mục đang cập nhật chưa đồng bộ. Kết quả hợp lệ gần nhất được giữ lại; hãy thử lại nếu lỗi tiếp tục.</string>
+    <string name="category_budget_overflow">Chi tiêu danh mục vượt giới hạn tính toán. Hãy xem lại giao dịch.</string>
+    <string name="category_budget_stale">Đang hiển thị kết quả danh mục hợp lệ gần nhất.</string>
+    <string name="category_budget_save_error">Không lưu được hạn mức danh mục. Dữ liệu nhập được giữ lại.</string>
     <string name="home_select_month">Chọn tháng, đang xem %1$s</string>
     <string name="home_choose_month">Chọn tháng</string>
 
@@ -172,4 +189,32 @@
     <string name="settings_version">Phiên bản %1$s</string>
     <string name="settings_read_error">Không thể đọc tùy chọn giao diện. Hãy thử lại.</string>
     <string name="settings_write_error">Không thể lưu tùy chọn. Hãy chọn lại để thử lần nữa.</string>
+    <string name="settings_data_management">QUẢN LÝ DỮ LIỆU</string>
+    <string name="settings_export_data">Xuất dữ liệu</string>
+    <string name="settings_export_success">Đã lưu tệp CSV.</string>
+    <string name="settings_export_unavailable">Không thể đọc dữ liệu giao dịch. Chạm Xuất dữ liệu để thử lại.</string>
+    <string name="settings_export_write_failed">Không thể lưu tệp CSV. Tệp chưa hoàn chỉnh đã được làm trống.</string>
+    <string name="settings_export_partial_file">Không thể hoàn tất xuất dữ liệu. Hãy kiểm tra và xóa tệp có thể chưa hoàn chỉnh tại vị trí đã chọn.</string>
+    <!-- TASK-016 Custom Categories -->
+    <string name="categories_manage_title">Quản lý danh mục</string>
+    <string name="categories_manage_hint">Sắp xếp thu chi theo cách của bạn. Danh mục đã lưu trữ vẫn được giữ trong giao dịch cũ.</string>
+    <string name="category_expense_heading">Danh mục chi tiêu</string>
+    <string name="category_income_heading">Danh mục thu nhập</string>
+    <string name="category_add">Thêm danh mục</string>
+    <string name="category_edit">Sửa danh mục</string>
+    <string name="category_name">Tên danh mục</string>
+    <string name="category_empty">Chưa có danh mục đang hoạt động.</string>
+    <string name="category_archived">Đã lưu trữ</string>
+    <string name="category_archived_heading">Đã lưu trữ</string>
+    <string name="category_archive">Lưu trữ</string>
+    <string name="category_restore">Khôi phục</string>
+    <string name="category_delete">Xóa danh mục</string>
+    <string name="category_delete_confirm">Xóa danh mục không được sử dụng này? Không thể hoàn tác.</string>
+    <string name="category_name_invalid">Nhập tên từ 1 đến 60 ký tự.</string>
+    <string name="category_duplicate">Tên này đã tồn tại cho cùng loại giao dịch.</string>
+    <string name="category_archived_input">Danh mục này đã được lưu trữ. Hãy khôi phục hoặc chọn tên khác.</string>
+    <string name="category_read_error">Không tải được danh mục. Vui lòng thử lại.</string>
+    <string name="category_write_error">Không lưu được thay đổi. Dữ liệu nhập vẫn được giữ lại.</string>
+    <string name="category_delete_in_use">Không thể xóa danh mục có giao dịch. Bạn có thể lưu trữ danh mục đó.</string>
+    <string name="category_unavailable">Danh mục không còn tồn tại.</string>
 </resources>

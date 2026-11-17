@@ -11,7 +11,13 @@ import com.ngyennhi.expensemanager.domain.usecase.ObserveTransactionsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.ObserveMonthlyBudgetsUseCase
 import com.ngyennhi.expensemanager.domain.usecase.SaveMonthlyBudgetUseCase
 import com.ngyennhi.expensemanager.domain.usecase.CalculateMonthlyBudgetUseCase
+import com.ngyennhi.expensemanager.domain.usecase.CalculateCategoryBudgetsUseCase
+import com.ngyennhi.expensemanager.domain.usecase.ObserveCategoriesUseCase
+import com.ngyennhi.expensemanager.domain.usecase.ObserveCategoryBudgetsUseCase
+import com.ngyennhi.expensemanager.domain.usecase.SaveCategoryBudgetUseCase
 import com.ngyennhi.expensemanager.presentation.FakeMonthlyBudgetRepository
+import com.ngyennhi.expensemanager.presentation.FakeCategoryBudgetRepository
+import com.ngyennhi.expensemanager.presentation.FakeCategoryRepository
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +40,8 @@ class HomeViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
     private val budgets = FakeMonthlyBudgetRepository()
+    private val categories = FakeCategoryRepository()
+    private val categoryBudgets = FakeCategoryBudgetRepository()
 
     @Before
     fun setUp() {
@@ -60,6 +68,10 @@ class HomeViewModelTest {
             observeBudgets = ObserveMonthlyBudgetsUseCase(budgets),
             saveBudget = SaveMonthlyBudgetUseCase(budgets),
             calculateBudget = CalculateMonthlyBudgetUseCase(),
+            observeCategories = ObserveCategoriesUseCase(categories),
+            observeCategoryBudgets = ObserveCategoryBudgetsUseCase(categoryBudgets),
+            saveCategoryBudget = SaveCategoryBudgetUseCase(categoryBudgets),
+            calculateCategoryBudgets = CalculateCategoryBudgetsUseCase(),
         )
     }
 

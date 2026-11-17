@@ -50,6 +50,24 @@ class TransactionPendingWriteTest {
         assertEquals(1, backs)
     }
 
+    @Test fun noteInputStopsAtUnicodeLimitAndShowsTheSharedCount() {
+        var state by mutableStateOf(TransactionUiState(loadStatus = LoadStatus.READY))
+        val expected = "a".repeat(199) + "🙂"
+        compose.setContent {
+            PersonalExpenseManagerTheme {
+                TransactionFormScreen(state, {}, {}, {}, {}, {}, {}, {}, {
+                    state = state.copy(form = state.form.copy(note = it))
+                }, {})
+            }
+        }
+
+        val noteInput = compose.onNodeWithTag("note_input").performScrollTo()
+        noteInput.performTextInput(expected + "discarded")
+        noteInput.assertTextContains(expected, substring = true)
+        compose.onNodeWithText(context.getString(R.string.note_count, 200, 200)).assertExists()
+        assertEquals(expected, state.form.note)
+    }
+
     @Test fun pendingDeleteBlocksEditAndBackThenUnlocksAfterFailure() {
         val record = Transaction(7, TransactionType.EXPENSE, 100, "Food", LocalDate.of(2024, 2, 29), null)
         var state by mutableStateOf(TransactionUiState(loadStatus = LoadStatus.READY,

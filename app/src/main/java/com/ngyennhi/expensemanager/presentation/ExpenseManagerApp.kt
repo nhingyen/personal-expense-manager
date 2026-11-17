@@ -30,6 +30,8 @@
     import com.ngyennhi.expensemanager.presentation.common.components.AppBottomBar
     import com.ngyennhi.expensemanager.presentation.navigation.navigateToTab
     import com.ngyennhi.expensemanager.ui.theme.ExpenseManagerColors
+    import com.ngyennhi.expensemanager.presentation.category.CategoryViewModel
+    import com.ngyennhi.expensemanager.presentation.category.CategoryManagementScreen
 
     import com.ngyennhi.expensemanager.presentation.wallet.*
     import androidx.compose.ui.res.stringResource
@@ -37,14 +39,17 @@
 
     @Composable
     fun ExpenseManagerApp(viewModel: TransactionViewModel, homeViewModel: HomeViewModel, statisticsViewModel: StatisticsViewModel, walletViewModel: WalletViewModel,
+        categoryViewModel: CategoryViewModel,
         settings: com.ngyennhi.expensemanager.presentation.settings.SettingsUiState,
         onLanguage: (com.ngyennhi.expensemanager.domain.model.AppLanguage) -> Unit,
         onTheme: (com.ngyennhi.expensemanager.domain.model.AppTheme) -> Unit,
         onRetrySettings: () -> Unit,
+        onExportCsv: () -> Unit,
     ) {
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
         val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+        val categoryState by categoryViewModel.uiState.collectAsStateWithLifecycle()
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
         val selectedTab = AppDestination.primaryForRoute(backStackEntry?.destination?.route)
@@ -112,6 +117,14 @@
                             onSaveBudget = homeViewModel::saveMonthlyBudget,
                             onClearBudget = homeViewModel::clearMonthlyBudget,
                             onRetryBudgets = homeViewModel::retryBudgets,
+                            onAddCategoryBudget = homeViewModel::startAddCategoryBudget,
+                            onEditCategoryBudget = homeViewModel::startEditCategoryBudget,
+                            onSelectCategoryBudgetCategory = homeViewModel::selectCategoryBudgetCategory,
+                            onCategoryBudgetInput = homeViewModel::setCategoryBudgetInput,
+                            onSaveCategoryBudget = homeViewModel::saveCategoryBudget,
+                            onRemoveCategoryBudget = homeViewModel::removeCategoryBudget,
+                            onDismissCategoryBudgetEditor = homeViewModel::dismissCategoryBudgetEditor,
+                            onRetryCategoryBudgets = homeViewModel::retryCategoryBudgets,
                             onChooseCategory = { category, type ->
                                 viewModel.startAdd()
                                 viewModel.setCategory(category)
@@ -146,7 +159,23 @@
                 composable(AppRoutes.SETTINGS) {
                     com.ngyennhi.expensemanager.presentation.settings.SettingsScreen(settings,
                         onLanguage, onTheme, onRetrySettings,
-                        onWallets = { navController.navigate(AppRoutes.WALLETS) })
+                        onWallets = { navController.navigate(AppRoutes.WALLETS) },
+                        onExportCsv = onExportCsv,
+                        onCategories = { navController.navigate(AppRoutes.CATEGORIES) })
+                }
+                composable(AppRoutes.CATEGORIES) {
+                    CategoryManagementScreen(categoryState,
+                        onBack = { navController.popBackStack() },
+                        onAdd = categoryViewModel::startCreate,
+                        onEdit = categoryViewModel::startEdit,
+                        onName = categoryViewModel::setEditorName,
+                        onType = categoryViewModel::setEditorType,
+                        onSave = categoryViewModel::saveEditor,
+                        onDismissEditor = categoryViewModel::dismissEditor,
+                        onToggleArchived = categoryViewModel::toggleArchived,
+                        onDelete = categoryViewModel::delete,
+                        onRetry = categoryViewModel::retry,
+                        onClearError = categoryViewModel::clearError)
                 }
                 composable(AppRoutes.WALLETS) {
                     WalletListScreen(walletState, onBack = { navController.popBackStack() },
@@ -181,6 +210,7 @@
                         walletState = walletState,
                         onWalletChange = viewModel::setWallet,
                         onRetryWallets = walletViewModel::retry,
+                        categoryState = categoryState,
                     )
                 }
                 composable(AppRoutes.DETAIL, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
@@ -223,6 +253,7 @@
                         walletState = walletState,
                         onWalletChange = viewModel::setWallet,
                         onRetryWallets = walletViewModel::retry,
+                        categoryState = categoryState,
                     )
                 }
             }

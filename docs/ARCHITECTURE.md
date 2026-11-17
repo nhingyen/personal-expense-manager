@@ -55,6 +55,18 @@ TASK-011/TASK-012 describe historical implementations superseded by TASK-013. Cl
 
 Android backup export is disabled in the manifest; data extraction rules exclude app storage from cloud backup and device transfer. This changes export policy without deleting or rewriting existing local files.
 
+Manual transaction CSV export is separate from Android backup. The existing
+`WalletViewModel` publishes wallets and all transactions together in one immutable
+`WalletUiState`. Export captures one READY state value, rejects any transaction
+whose wallet is absent, and ignores transaction-list filters. Presentation encodes
+that snapshot into a complete UTF-8 byte array before opening the user-selected
+document. `MainActivity` owns the `CreateDocument("text/csv")` contract
+and writes through `ContentResolver` on `Dispatchers.IO`; it never receives a raw
+filesystem path. Cancellation is silent, duplicate requests are blocked, and a
+failed provider write is best-effort truncated so incomplete CSV content is not
+presented as successful. This adds no schema, permission, network client or new
+dependency.
+
 ## Localization
 
 Vietnamese is the default resource locale (`values/strings.xml` and `res/resources.properties`); English translations live in `values-en/strings.xml`. User-facing text belongs in Android string/plural resources with matching keys and placeholders. Date, number, and currency display formatting belongs in presentation, while domain values remain locale-neutral.
@@ -94,6 +106,24 @@ Settings now exposes Wallets. List, detail and form use secondary Navigation Com
 Dashboard, Statistics and Budget still observe the same unjoined transaction records and retain their existing month rules. Changing a wallet or its opening balance cannot add report rows or consume a budget. Wallet balances and monthly net income are deliberately different measures.
 
 The only new test library is version-catalog `room-testing`, with schema assets for MigrationTestHelper. A debug-only serialization BOM aligns Room migration JSON 1.8.1 with the serialization core already pulled in by Navigation; otherwise AGP's consistent resolution selected core 1.7.3 and migration schema parsing failed with AbstractMethodError. Release runtime dependencies are unchanged by this test alignment.
+
+## Custom Categories (TASK-016)
+
+Room v3 adds a `categories` catalog while retaining `Transaction.category` and `transactions.category` as strings. `CategoryRepository` is a pure domain contract; Room supplies the entity, DAO and repository, and Hilt connects category use cases at the app boundary. `CategoryViewModel` observes this catalog for management and the transaction form combines its active values with localized built-in suggestions.
+
+`MIGRATION_2_3` creates the catalog and reads existing transaction type/category pairs in ID order. Kotlin `trim().lowercase(Locale.ROOT)` normalization is used because SQLite `lower()` and `NOCASE` do not provide the required Unicode behavior. The first display spelling becomes the catalog row; all transaction rows remain unchanged. A unique `(type, normalized_name)` index enforces one case-insensitive category per transaction type. Production registers both migrations and has no destructive fallback.
+
+Category rename is one Room transaction: it changes the catalog row and every historical transaction string whose trimmed, Locale.ROOT-normalized value matches the old normalized name. Archive changes only catalog state. Guarded delete scans the same normalized historical values and refuses an in-use category. Free text matching an archived row resolves to an explicit archived conflict; it neither creates a duplicate nor restores the row.
+
+Transaction insert/update delegates to `TransactionDao` transactional methods. They resolve the active canonical spelling or register a new catalog row before writing the transaction, so catalog registration and transaction persistence cannot partially commit. Editing may keep the same normalized archived category already stored on that historical record, but another transaction cannot newly select it. Existing filters, statistics, Home, wallets and CSV remain transaction-string consumers, so they require no join and preserve archived historical values.
+
+## Category-based Budgets (TASK-017)
+
+Room v4 adds `category_budgets`, keyed by category ID, year and month, with a restrictive foreign key to the v3 category catalog. Stable category IDs let rename preserve limits without cross-store coordination. Archive preserves limits; hard delete remains guarded while either historical transactions or category budgets reference the category. `MIGRATION_3_4` is additive and leaves transactions, wallets, categories and the existing `monthly_budgets` preferences unchanged.
+
+`CategoryBudgetRepository` is a pure domain contract implemented by Room. Transactional writes accept only positive limits for active expense categories; removal remains available for an archived category. Pure calculation reuses the existing transaction and category snapshots, matches expense strings with the v3 `trim().lowercase(Locale.ROOT)` rule, performs checked `Long` summation and uses `BigInteger` for percentage arithmetic. Missing or duplicate catalog mappings are explicit inconsistent snapshots, not zero spending.
+
+HomeViewModel retains its single transaction observer and separately combines category-catalog and category-budget flows. A calculation replaces UI rows only when all three cached snapshots are coherent. Inconsistent rename emissions, read failure or overflow retain the last valid category rows as explicitly stale and expose Retry; a later coherent emission recovers automatically. The selected month is shared with the existing monthly budget sheet. One pending monthly/category write blocks month changes, drafts, dismissal and competing actions. Compose renders compact Figma-adapted category cards and adds reached/exceeded items to the existing in-app notices; it does not deliver OS notifications.
 
 ## Testing strategy
 

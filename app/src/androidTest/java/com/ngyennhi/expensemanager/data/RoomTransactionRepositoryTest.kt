@@ -5,9 +5,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ngyennhi.expensemanager.data.local.ExpenseManagerDatabase
 import com.ngyennhi.expensemanager.data.repository.RoomTransactionRepository
+import com.ngyennhi.expensemanager.data.repository.RoomCategoryRepository
 import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.repository.ArchivedCategoryException
+import com.ngyennhi.expensemanager.domain.usecase.SetCategoryArchivedUseCase
 import java.time.LocalDate
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
@@ -19,6 +22,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,6 +96,35 @@ class RoomTransactionRepositoryTest {
             fileDatabase.close()
             context.deleteDatabase(name)
         }
+    }
+
+    @Test
+    fun transactionWritesRegisterCanonicalCategoriesAndRejectArchivedChangesAtomically() = runBlocking {
+        val firstId = repository.add(draft().copy(category = " Travel "))
+        val secondId = repository.add(draft().copy(category = "tRaVeL"))
+        val categories = RoomCategoryRepository(database.categoryDao())
+        val travel = categories.observeCategories().first().single()
+        assertEquals("Travel", travel.name)
+        assertEquals(listOf("Travel", "Travel"), repository.observeTransactions().first().map { it.category })
+
+        assertTrue(SetCategoryArchivedUseCase(categories)(travel.id, true))
+        try {
+            repository.add(draft().copy(category = "TRAVEL"))
+            fail("Expected archived category rejection")
+        } catch (_: ArchivedCategoryException) { }
+        assertEquals(2, repository.observeTransactions().first().size)
+
+        val historical = repository.observeTransactions().first().first { it.id == firstId }
+        assertTrue(repository.update(historical.copy(amountVnd = 700)))
+        val giftId = repository.add(draft().copy(category = "Gift"))
+        val gift = repository.observeTransactions().first().first { it.id == giftId }
+        try {
+            repository.update(gift.copy(category = " travel "))
+            fail("Expected archived category rejection")
+        } catch (_: ArchivedCategoryException) { }
+        assertEquals("Gift", repository.observeTransactions().first().first { it.id == giftId }.category)
+        assertEquals(2, categories.observeCategories().first().size)
+        assertTrue(repository.observeTransactions().first().any { it.id == secondId })
     }
 
     private fun draft(

@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +35,8 @@ internal fun SettingsScreen(
     onTheme: (AppTheme) -> Unit,
     onRetry: () -> Unit,
     onWallets: () -> Unit,
+    onExportCsv: () -> Unit,
+    onCategories: () -> Unit = {},
 ) {
     val enabled = !state.isLoading && !state.isSaving && !state.readError
     Scaffold(containerColor = ExpenseManagerColors.background,
@@ -65,6 +68,18 @@ internal fun SettingsScreen(
                     Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(16.dp), tint = ExpenseManagerColors.textSecondary)
                 }
             }
+            Surface(onClick = onCategories, shape = RoundedCornerShape(20.dp), color = ExpenseManagerColors.surface,
+                modifier = Modifier.fillMaxWidth().testTag("settings_categories")) {
+                Row(Modifier.heightIn(min = 72.dp).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(painterResource(R.drawable.ic_home_categories), null, Modifier.size(20.dp),
+                        tint = ExpenseManagerColors.primary)
+                    Text(stringResource(R.string.categories_manage_title), Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium)
+                    Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(16.dp),
+                        tint = ExpenseManagerColors.textSecondary)
+                }
+            }
             SettingsCard {
                 SettingsHeading(R.drawable.ic_settings_palette, stringResource(R.string.settings_appearance))
                 FlowRow(Modifier.fillMaxWidth().selectableGroup(),
@@ -91,6 +106,37 @@ internal fun SettingsScreen(
                 }
             }
             SettingsCard {
+                Text(stringResource(R.string.settings_data_management),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ExpenseManagerColors.textSecondary)
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .testTag("settings_export_csv")
+                    .clickable(enabled = !state.exportBusy, onClick = onExportCsv)
+                    .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(painterResource(R.drawable.ic_settings_export), null, Modifier.size(20.dp),
+                        tint = ExpenseManagerColors.primary)
+                    Text(stringResource(R.string.settings_export_data), Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium)
+                    Text("CSV", style = MaterialTheme.typography.bodySmall,
+                        color = ExpenseManagerColors.textSecondary)
+                    if (state.exportBusy) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(16.dp),
+                            tint = ExpenseManagerColors.textSecondary)
+                    }
+                }
+                when (state.exportStatus) {
+                    CsvExportStatus.SUCCESS -> ExportMessage(R.string.settings_export_success, false)
+                    CsvExportStatus.SOURCE_UNAVAILABLE -> ExportMessage(R.string.settings_export_unavailable, true)
+                    CsvExportStatus.WRITE_FAILED -> ExportMessage(R.string.settings_export_write_failed, true)
+                    CsvExportStatus.PARTIAL_FILE_MAY_REMAIN -> ExportMessage(R.string.settings_export_partial_file, true)
+                    else -> Unit
+                }
+            }
+            SettingsCard {
                 SettingsHeading(R.drawable.ic_settings_about, stringResource(R.string.settings_about))
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.settings_about_description), style = MaterialTheme.typography.bodySmall,
@@ -102,6 +148,13 @@ internal fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ExportMessage(message: Int, error: Boolean) {
+    Text(stringResource(message), Modifier.testTag("settings_export_message"),
+        style = MaterialTheme.typography.bodySmall,
+        color = if (error) MaterialTheme.colorScheme.error else ExpenseManagerColors.income)
 }
 
 @Composable

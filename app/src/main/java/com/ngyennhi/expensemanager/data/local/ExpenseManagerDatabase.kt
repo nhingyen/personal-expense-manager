@@ -4,11 +4,18 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import java.util.Locale
 
-@Database(entities = [TransactionEntity::class, WalletEntity::class], version = 2, exportSchema = true)
+@Database(
+    entities = [TransactionEntity::class, WalletEntity::class, CategoryEntity::class, CategoryBudgetEntity::class],
+    version = 4,
+    exportSchema = true,
+)
 abstract class ExpenseManagerDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun walletDao(): WalletDao
+    abstract fun categoryDao(): CategoryDao
+    abstract fun categoryBudgetDao(): CategoryBudgetDao
 
     companion object {
         private const val DEFAULT_WALLET_SQL = "INSERT OR IGNORE INTO wallets (id, name, type, opening_balance_vnd) VALUES (1, '', 'CASH', 0)"
@@ -27,6 +34,36 @@ abstract class ExpenseManagerDatabase : RoomDatabase() {
                 db.execSQL("DROP TABLE transactions")
                 db.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
                 db.execSQL("CREATE INDEX index_transactions_wallet_id ON transactions(wallet_id)")
+            }
+        }
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, type TEXT NOT NULL, name TEXT NOT NULL, normalized_name TEXT NOT NULL, is_archived INTEGER NOT NULL DEFAULT 0)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_categories_type_normalized_name ON categories(type, normalized_name)")
+
+                // Kotlin normalization is deliberate: SQLite lower()/NOCASE only handle ASCII.
+                val seen = mutableSetOf<Pair<String, String>>()
+                db.query("SELECT type, category FROM transactions ORDER BY id").use { cursor ->
+                    val typeIndex = cursor.getColumnIndexOrThrow("type")
+                    val categoryIndex = cursor.getColumnIndexOrThrow("category")
+                    while (cursor.moveToNext()) {
+                        val type = cursor.getString(typeIndex)
+                        val name = cursor.getString(categoryIndex).trim()
+                        val normalized = name.lowercase(Locale.ROOT)
+                        if (name.isNotEmpty() && seen.add(type to normalized)) {
+                            db.execSQL(
+                                "INSERT INTO categories (type, name, normalized_name, is_archived) VALUES (?, ?, ?, 0)",
+                                arrayOf(type, name, normalized),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS category_budgets (category_id INTEGER NOT NULL, year INTEGER NOT NULL, month INTEGER NOT NULL, limit_vnd INTEGER NOT NULL, PRIMARY KEY(category_id, year, month), FOREIGN KEY(category_id) REFERENCES categories(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_category_budgets_category_id ON category_budgets(category_id)")
             }
         }
     }

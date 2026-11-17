@@ -6,6 +6,10 @@ import com.ngyennhi.expensemanager.domain.model.Transaction
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionType
+import com.ngyennhi.expensemanager.domain.model.truncateTransactionNote
+import com.ngyennhi.expensemanager.domain.model.categoryNameLength
+import com.ngyennhi.expensemanager.domain.model.MAX_CATEGORY_NAME_LENGTH
+import com.ngyennhi.expensemanager.domain.repository.ArchivedCategoryException
 import com.ngyennhi.expensemanager.domain.usecase.AddTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.DeleteTransactionUseCase
 import com.ngyennhi.expensemanager.domain.usecase.FilterTransactionsUseCase
@@ -117,7 +121,9 @@ class TransactionViewModel @Inject constructor(
 
     fun setDate(value: LocalDate) = edit { it.copy(form = it.form.copy(date = value), actionError = null) }
 
-    fun setNote(value: String) = edit { it.copy(form = it.form.copy(note = value.take(200)), actionError = null) }
+    fun setNote(value: String) = edit {
+        it.copy(form = it.form.copy(note = value.truncateTransactionNote()), actionError = null)
+    }
 
     fun setWallet(value: Long) = edit { it.copy(form = it.form.copy(walletId = value), actionError = null) }
 
@@ -134,7 +140,11 @@ class TransactionViewModel @Inject constructor(
             amount == null || amount <= 0 -> FieldError.INVALID_AMOUNT
             else -> null
         }
-        val categoryError = if (form.category.isBlank()) FieldError.REQUIRED else null
+        val categoryError = when {
+            form.category.isBlank() -> FieldError.REQUIRED
+            form.category.trim().categoryNameLength() > MAX_CATEGORY_NAME_LENGTH -> FieldError.INVALID_CATEGORY
+            else -> null
+        }
         if (amountError != null || categoryError != null) {
             update {
                 it.copy(form = it.form.copy(amountError = amountError, categoryError = categoryError))
@@ -160,6 +170,8 @@ class TransactionViewModel @Inject constructor(
                     navigationChannel.send(TransactionNavigationEvent.SAVED)
                 }
                 else update { it.copy(actionError = ActionError.RECORD_UNAVAILABLE) }
+            } catch (_: ArchivedCategoryException) {
+                update { it.copy(form = it.form.copy(categoryError = FieldError.CATEGORY_ARCHIVED)) }
             } catch (cause: CancellationException) {
                 throw cause
             } catch (_: Exception) {

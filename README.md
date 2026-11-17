@@ -1,6 +1,6 @@
 # Personal Expense Manager
 
-**v1.0.0 - Offline-only.** An Android portfolio app for tracking income, expenses, wallets and monthly budgets. The app opens directly into Home with one local financial profile.
+**v1.0.0 - Offline-only.** An Android portfolio app for tracking income, expenses, wallets, custom categories and monthly budgets. The app opens directly into Home with one local financial profile.
 
 ## Screenshots
 
@@ -18,6 +18,10 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/monthly-budget.png" width="220" alt="Monthly spending limit"> | <img src="docs/screenshots/categories.png" width="220" alt="Categories"> | <img src="docs/screenshots/monthly-budget-unset.png" width="220" alt="Monthly budget with no limit or expenses"> | <img src="docs/screenshots/monthly-budget-exceeded.png" width="220" alt="Monthly budget exceeded"> |
 
+| Category management | Category budgets | CSV export |  |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/category-management.png" width="220" alt="Custom category management"> | <img src="docs/screenshots/category-budgets.png" width="220" alt="Category budgets"> | <img src="docs/screenshots/settings-export.png" width="220" alt="CSV export in Settings"> |  |
+
 | Wallets | Wallet details | Edit wallet | Transaction wallet selection |
 | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/wallets.png" width="220" alt="Wallet balances"> | <img src="docs/screenshots/wallet-details.png" width="220" alt="Wallet details"> | <img src="docs/screenshots/edit-wallet.png" width="220" alt="Edit wallet form"> | <img src="docs/screenshots/transaction-wallet.png" width="220" alt="Choose a wallet for a transaction"> |
@@ -30,13 +34,15 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 
 - Add, edit and delete income/expenses with category, date, note and wallet.
 - Manage manual cash, bank and e-wallet balances in VND.
-- View monthly totals, budgets and spending warnings.
+- View monthly totals, overall and per-expense-category budgets, and spending warnings.
 - Search and filter transactions by type, category and date.
+- Manage custom income and expense categories locally, including rename, archive, restore and guarded delete.
 - View category charts and six-month income/expense comparisons.
 - Choose Vietnamese/English and Light/Dark/System appearance.
+- Export every saved transaction to a user-selected CSV file without network or broad storage access.
 - Open and use every financial feature without an account or network.
 
-Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
+Financial data remains in the existing local Room database, monthly budget preferences and category budgets. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
 
 Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
 
@@ -56,7 +62,7 @@ MVVM + Clean Architecture in one `:app` module: `presentation → domain ← dat
 Requires Android Studio supporting **AGP 9.4.1**, **JDK 25**, **SDK 37**, Build Tools **36.0.0**, and an **API 26+** device. Gradle is provided by the wrapper.
 
 1. Clone the repository and open it in Android Studio.
-2. Set your Android SDK path in local.properties.
+2. Set your Android SDK path in `local.properties`.
 3. Sync Gradle, select `app`, and click **Run**. No service configuration or credentials are required.
 
 ## Build & test
@@ -74,7 +80,7 @@ adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w -e class com.ngyennhi.expensemanager.presentation.OfflineFlowTest com.ngyennhi.expensemanager.test/com.ngyennhi.expensemanager.HiltTestRunner
 ```
 
-The regression uses isolated test storage. For an existing installation, keep the application ID and signing key, use `adb install -r`, and do not uninstall or clear app storage. Room stays at schema v2 with database `expense_manager.db`; budgets keep `monthly_budgets` and their existing keys. [TASK-013](tasks/TASK-013.md) records release checks and the manual emulator checklist.
+The regression uses isolated test storage. For an existing installation, keep the application ID and signing key, use `adb install -r`, and do not uninstall or clear app storage. Room uses schema v4 with database `expense_manager.db`; whole-month budgets keep `monthly_budgets`, while category budgets use the Room database. [TASK-013](tasks/TASK-013.md) records release checks and the manual emulator checklist.
 
 On macOS/Linux, use `sh ./gradlew`. Debug APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
