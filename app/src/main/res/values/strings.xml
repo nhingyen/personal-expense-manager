@@ -117,6 +117,23 @@
     <string name="home_choose_category_to_add">Chọn danh mục để thêm giao dịch.</string>
     <string name="home_budget_reached">Bạn đã dùng hết ngân sách tháng này.</string>
     <string name="home_no_notifications">Chưa có thông báo ngân sách cho tháng này.</string>
+    <string name="category_budgets_title">Ngân sách danh mục</string>
+    <string name="category_budget_add">Thêm hạn mức</string>
+    <string name="category_budget_edit">Chỉnh sửa</string>
+    <string name="category_budget_remove">Xóa hạn mức</string>
+    <string name="category_budget_limit">Hạn mức chi tiêu danh mục</string>
+    <string name="category_budget_empty">Chưa có hạn mức danh mục cho tháng này.</string>
+    <string name="category_budget_spent_limit">%1$s / %2$s</string>
+    <string name="category_budget_remaining">Còn lại %1$s</string>
+    <string name="category_budget_reached">Đã dùng hết hạn mức danh mục.</string>
+    <string name="category_budget_exceeded">Vượt hạn mức %1$s</string>
+    <string name="category_budget_reached_notice">%1$s đã dùng hết hạn mức.</string>
+    <string name="category_budget_exceeded_notice">%1$s đã vượt hạn mức %2$s.</string>
+    <string name="category_budget_load_error">Không tải được ngân sách danh mục. Hãy thử lại.</string>
+    <string name="category_budget_snapshot_error">Dữ liệu danh mục đang cập nhật chưa đồng bộ. Kết quả hợp lệ gần nhất được giữ lại; hãy thử lại nếu lỗi tiếp tục.</string>
+    <string name="category_budget_overflow">Chi tiêu danh mục vượt giới hạn tính toán. Hãy xem lại giao dịch.</string>
+    <string name="category_budget_stale">Đang hiển thị kết quả danh mục hợp lệ gần nhất.</string>
+    <string name="category_budget_save_error">Không lưu được hạn mức danh mục. Dữ liệu nhập được giữ lại.</string>
     <string name="home_select_month">Chọn tháng, đang xem %1$s</string>
     <string name="home_choose_month">Chọn tháng</string>
 

@@ -30,7 +30,7 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 
 - Add, edit and delete income/expenses with category, date, an optional note of up to 200 characters and wallet.
 - Manage manual cash, bank and e-wallet balances in VND.
-- View monthly totals, budgets and spending warnings.
+- View monthly totals, overall and per-expense-category budgets, and spending warnings.
 - Search and filter transactions by type, category and date.
 - Manage custom income and expense categories locally, including rename, archive, restore and guarded delete.
 - View category charts and six-month income/expense comparisons.
@@ -40,7 +40,7 @@ Captured on Pixel 5 / API 35. Financial screens use sample data. Settings captur
 
 Financial data remains in the existing local Room database and monthly budget preferences. Updating the app preserves that data; uninstalling or clearing Android app storage can remove it. This release has no login, per-account data ownership, in-app cloud backup or synchronization.
 
-Development after v1.0.0 includes the TASK-016 Room v3 category catalog, safe migration, category-management UI and transaction-form integration. Historical transaction category strings remain compatible with filters, statistics and CSV export.
+Development after v1.0.0 includes the TASK-016 Room v3 category catalog and TASK-017 Room v4 category budgets. Home keeps its overall monthly budget and now supports per-expense-category monthly limits, exact progress and warnings, with archived limits retained until removed. Historical transaction category strings remain compatible with filters, statistics and CSV export.
 
 Android backup and device-transfer exports are disabled. Keep the installed app and its local storage when updating.
 

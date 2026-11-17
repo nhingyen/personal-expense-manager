@@ -32,6 +32,8 @@ import com.ngyennhi.expensemanager.data.local.TransactionDao
 import com.ngyennhi.expensemanager.di.TransactionDatabaseModule
 import com.ngyennhi.expensemanager.di.MonthlyBudgetStorageModule
 import com.ngyennhi.expensemanager.domain.repository.MonthlyBudgetRepository
+import com.ngyennhi.expensemanager.domain.repository.CategoryBudgetRepository
+import com.ngyennhi.expensemanager.domain.repository.CategoryRepository
 import com.ngyennhi.expensemanager.domain.model.TransactionDraft
 import com.ngyennhi.expensemanager.domain.model.TransactionDateRange
 import com.ngyennhi.expensemanager.domain.model.TransactionType
@@ -71,6 +73,8 @@ class HomeFlowTest {
     @get:Rule(order = 1) val composeRule = createAndroidComposeRule<MainActivity>()
     @Inject lateinit var database: ExpenseManagerDatabase
     @Inject lateinit var repository: TransactionRepository
+    @Inject lateinit var categoryBudgetRepository: CategoryBudgetRepository
+    @Inject lateinit var categoryRepository: CategoryRepository
     private val home get() = ViewModelProvider(composeRule.activity)[HomeViewModel::class.java]
     private val transactions get() = ViewModelProvider(composeRule.activity)[TransactionViewModel::class.java]
 
@@ -358,6 +362,42 @@ class HomeFlowTest {
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back)).performClick()
         composeRule.onNodeWithTag("home_greeting").assertExists()
         assertTrue(runBlocking { repository.observeTransactions().first().isEmpty() })
+    }
+
+    @Test
+    fun categoryBudgetPersistsReactsToRoomArchiveAndRemovesOffline() {
+        val month = home.uiState.value.selectedMonth
+        val transactionId = runBlocking {
+            repository.add(TransactionDraft(TransactionType.EXPENSE, 60, "Food", month.atDay(1), null))
+        }
+        composeRule.waitUntil(5_000) {
+            home.uiState.value.activeExpenseCategories.any { it.name == "Food" }
+        }
+
+        composeRule.onNodeWithTag("home_budget_card").performScrollTo().performClick()
+        composeRule.onNodeWithTag("category_budget_add").performScrollTo().performClick()
+        composeRule.onNodeWithTag("category_budget_input").performTextInput("50")
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithTag("category_budget_save").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) {
+            home.uiState.value.categoryBudgetItems.singleOrNull()?.budget?.spentVnd == 60L &&
+                !home.uiState.value.isSavingCategoryBudget
+        }
+        val item = home.uiState.value.categoryBudgetItems.single()
+        assertEquals(50L, item.budget.limitVnd)
+        composeRule.onNodeWithTag("category_budget_warning_${item.category.id}").performScrollTo().assertExists()
+        assertEquals(1, runBlocking { categoryBudgetRepository.observeLimits().first().size })
+
+        runBlocking { categoryRepository.setArchived(item.category.id, true) }
+        composeRule.waitUntil(5_000) {
+            home.uiState.value.categoryBudgetItems.singleOrNull()?.category?.isArchived == true
+        }
+        composeRule.onNodeWithTag("category_budget_archived_${item.category.id}").performScrollTo().assertExists()
+        composeRule.onNodeWithTag("category_budget_edit_${item.category.id}").assertDoesNotExist()
+        composeRule.onNodeWithTag("category_budget_remove_${item.category.id}").performScrollTo().performClick()
+        composeRule.waitUntil(5_000) { home.uiState.value.categoryBudgetItems.isEmpty() }
+        assertTrue(runBlocking { categoryBudgetRepository.observeLimits().first().isEmpty() })
+        runBlocking { repository.delete(transactionId) }
     }
 
     @Test

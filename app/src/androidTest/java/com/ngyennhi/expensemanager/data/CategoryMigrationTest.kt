@@ -109,6 +109,10 @@ class CategoryMigrationTest {
 
     private fun open() = Room.databaseBuilder(context, ExpenseManagerDatabase::class.java, name)
         .addCallback(ExpenseManagerDatabase.SEED_DEFAULT_WALLET)
-        .addMigrations(ExpenseManagerDatabase.MIGRATION_1_2, ExpenseManagerDatabase.MIGRATION_2_3)
+        .addMigrations(
+            ExpenseManagerDatabase.MIGRATION_1_2,
+            ExpenseManagerDatabase.MIGRATION_2_3,
+            ExpenseManagerDatabase.MIGRATION_3_4,
+        )
         .build()
 }
